@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#101C16">
+<title>ป่าดงพงไพร · AR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Trirong:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#101C16; --ink-2:#1B2E24; --moss:#38553F;
+  --lichen:#A9C0A2; --paper:#EBE6D8; --bloom:#E0457B;
+  --edge:rgba(169,192,162,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--paper);
+  font-family:"IBM Plex Sans Thai",system-ui,sans-serif;overscroll-behavior:none}
+#feed{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000}
+canvas.gl{position:fixed;inset:0;display:block}
+
+/* ---------- intro ---------- */
+#intro{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 30px) 22px calc(env(safe-area-inset-bottom) + 22px);
+  background:
+    radial-gradient(120% 70% at 50% 0%,#22392C 0%,var(--ink) 62%),
+    var(--ink);overflow-y:auto}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--lichen);opacity:.75}
+h1{font-family:Trirong,serif;font-weight:600;font-size:clamp(34px,10vw,48px);
+  line-height:1.12;margin:10px 0 0;letter-spacing:-.01em}
+h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
+.lede{margin-top:14px;font-size:15px;line-height:1.72;color:#CDD8C8;max-width:34ch}
+
+.tray{margin-top:auto;padding-top:26px;display:flex;flex-direction:column;gap:10px}
+.tray-label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;
+  color:var(--lichen);opacity:.7;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+.card{display:grid;grid-template-columns:74px 1fr auto;align-items:center;gap:16px;
+  padding:12px 14px;border:1px solid var(--edge);border-radius:3px;background:rgba(27,46,36,.5);
+  cursor:pointer;transition:border-color .22s,background .22s,transform .12s;text-align:start;
+  color:inherit;font:inherit;width:100%}
+.card:hover,.card:focus-visible{border-color:var(--lichen);background:rgba(56,85,63,.55)}
+.card:active{transform:scale(.985)}
+.card:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
+.card img{width:74px;height:60px;object-fit:contain;object-position:center bottom;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
+.card .th{font-family:Trirong,serif;font-size:20px;line-height:1.3}
+.card .sci{font-style:italic;font-size:12.5px;color:var(--lichen);opacity:.85;margin-top:2px}
+.card .code{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--lichen);opacity:.6}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.seg-b{background:rgba(27,46,36,.5);border:1px solid var(--edge);color:#9FB399;
+  border-radius:3px;padding:11px 8px;font:inherit;font-size:14.5px;cursor:pointer;
+  transition:border-color .2s,color .2s,background .2s}
+.seg-b.on{border-color:var(--lichen);color:var(--paper);background:rgba(56,85,63,.6)}
+.seg-b:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
+.note{margin-top:16px;font-size:12.5px;line-height:1.7;color:#8FA48A}
+
+/* ---------- AR chrome ---------- */
+#ar{position:fixed;inset:0;z-index:30;display:none;pointer-events:none}
+#ar.on{display:block}
+.topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  background:linear-gradient(to bottom,rgba(16,28,22,.82),transparent);pointer-events:auto}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bloom);flex:none}
+.dot.ready{background:var(--lichen)}
+.topbar .name{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;opacity:.85}
+.exit{margin-inline-start:auto;background:none;border:1px solid var(--edge);color:var(--paper);
+  border-radius:3px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
+
+.hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 118px);
+  transform:translateX(-50%);background:rgba(16,28,22,.86);border:1px solid var(--edge);
+  border-radius:3px;padding:9px 16px;font-size:13.5px;white-space:nowrap;
+  backdrop-filter:blur(8px);transition:opacity .3s}
+
+.dock{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:9px;
+  padding:16px 16px calc(env(safe-area-inset-bottom) + 18px);
+  background:linear-gradient(to top,rgba(16,28,22,.86),transparent);pointer-events:auto}
+.btn{background:rgba(27,46,36,.78);border:1px solid var(--edge);color:var(--paper);
+  border-radius:3px;padding:11px 17px;font:inherit;font-size:14px;cursor:pointer;
+  backdrop-filter:blur(8px)}
+.btn:active{background:var(--moss)}
+.btn:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
+.btn.hero{background:var(--paper);color:var(--ink);border-color:var(--paper);font-weight:600}
+
+#msg{position:fixed;inset:0;z-index:60;display:none;place-items:center;padding:30px;
+  background:rgba(16,28,22,.96);text-align:center}
+#msg.on{display:grid}
+#msg .box{max-width:36ch}
+#msg h2{font-family:Trirong,serif;font-size:24px;margin-bottom:12px}
+#msg p{font-size:14.5px;line-height:1.75;color:#CDD8C8;margin-bottom:20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<video id="feed" playsinline muted autoplay></video>
+
+<section id="intro">
+  <div class="eyebrow">พิพิธภัณฑ์ป่าดงพงไพร</div>
+  <h1>ยกป่ามาไว้<br><em>ตรงหน้าคุณ</em></h1>
+  <p class="lede">เลือกสิ่งมีชีวิตหนึ่งชนิด แล้ววางลงบนพื้นตรงที่คุณยืนอยู่ เดินรอบดูได้ทุกด้าน</p>
+
+  <div class="tray">
+    <div class="tray-label">วางลงบน</div>
+    <div class="seg" id="seg">
+      <button class="seg-b on" data-s="floor">พื้นห้อง</button>
+      <button class="seg-b" data-s="table">บนโต๊ะ</button>
+    </div>
+    <div class="tray-label" style="margin-top:14px">เลือกตัวอย่าง / 3 ชนิด</div>
+    <div id="cards"></div>
+    <p class="note">ต้องใช้กล้อง กรุณากด “อนุญาต” เมื่อเบราว์เซอร์ถาม · ใช้ได้ดีที่สุดในที่ที่มีแสงพอและมีพื้นโล่งประมาณ 2 เมตร</p>
+  </div>
+</section>
+
+<div id="ar">
+  <div class="topbar">
+    <span class="dot" id="dot"></span>
+    <span class="name" id="tName">—</span>
+    <button class="exit" id="bExit">ออก</button>
+  </div>
+  <div class="hint" id="hint">เล็งกล้องไปที่พื้น</div>
+  <div class="dock">
+    <button class="btn hero" id="bPlace">วางตรงนี้</button>
+    <button class="btn" id="bReplay" hidden>เล่นอีกครั้ง</button>
+    <button class="btn" id="bMove" hidden>ย้ายที่</button>
+  </div>
+</div>
+
+<div id="msg"><div class="box"><h2 id="mT"></h2><p id="mP"></p>
+  <button class="btn hero" onclick="location.reload()">ลองใหม่</button></div></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* วิดีโอ alpha-packed เก็บค่า alpha ไว้ใน "ช่องสี" ของครึ่งล่าง ถ้าปล่อยให้ three
+   ทำ sRGB→linear ตามปกติ ค่า alpha จะถูกแปลงไปด้วย (0.5 จะกลายเป็น 0.21)
+   ขอบวัตถุจะจางผิดหมด จึงปิด color management แล้วส่งค่าดิบผ่านตรง ๆ
+   ฉากนี้ไม่มีแสงหรือวัสดุ PBR จึงไม่เสียอะไร */
+THREE.ColorManagement.enabled = false;
+
+/* ============================================================
+   ตั้งค่าตัวอย่างแต่ละชนิด — แก้ชื่อ/ขนาดจริงได้ที่นี่จุดเดียว
+   width  = ความกว้างของเฟรมวิดีโอในโลกจริง (เมตร)
+   baseY  = ความสูงจากพื้นถึงจุดกึ่งกลางเฟรม (เมตร)
+   ============================================================ */
+const SPECIMENS = [
+  { id:'mushroom', th:'เห็ดป่าเต็งรัง', sci:'Fungi spp.',            code:'FNG-01',
+    src:'video/mushroom.mp4',  poster:'poster/mushroom.png',  width:1.15, baseY:0.32 },
+  { id:'tulip',    th:'ดอกกระเจียว',    sci:'Curcuma alismatifolia', code:'CUR-02',
+    src:'video/tulip.mp4',     poster:'poster/tulip.png',     width:1.50, baseY:0.45 },
+  { id:'butterfly',th:'ผีเสื้อ',        sci:'Lepidoptera',           code:'LEP-03',
+    src:'video/butterfly.mp4', poster:'poster/butterfly.png', width:2.40, baseY:1.30 },
+];
+const EYE = 1.45; // ความสูงกล้องโดยประมาณ ใช้ในโหมดสำรอง (เมตร)
+
+/* พื้นผิวที่จะวาง — โต๊ะเตี้ยกว่าพื้นและเล็กกว่ามาก จึงต้องย่อขนาดตาม
+   drop  = ระยะจากกล้องลงไปถึงพื้นผิว ใช้เฉพาะโหมดสำรอง (iOS)
+           โหมด WebXR อ่านพื้นผิวจริงอยู่แล้ว ค่านี้ไม่มีผล
+   scale = ตัวคูณขนาดวัตถุ */
+const SURFACES = {
+  floor: { label:'พื้นห้อง', drop:EYE,  scale:1.00 },
+  table: { label:'บนโต๊ะ',   drop:0.55, scale:0.28 },
+};
+let surface = 'floor';
+
+const $ = s => document.querySelector(s);
+const feed=$('#feed'), intro=$('#intro'), arUI=$('#ar'), hint=$('#hint'), dot=$('#dot');
+const bPlace=$('#bPlace'), bReplay=$('#bReplay'), bMove=$('#bMove');
+
+/* ---------- เมนู ---------- */
+$('#cards').innerHTML = SPECIMENS.map(s=>`
+  <button class="card" data-id="${s.id}">
+    <img src="${s.poster}" alt="">
+    <span><span class="th">${s.th}</span><br>
+      <span class="sci">${s.sci}</span></span>
+    <span class="code">${s.code}</span>
+  </button>`).join('');
+document.querySelectorAll('.card').forEach(c=>
+  c.addEventListener('click',()=>launch(SPECIMENS.find(s=>s.id===c.dataset.id))));
+
+document.querySelectorAll('.seg-b').forEach(b=>b.addEventListener('click',()=>{
+  surface = b.dataset.s;
+  document.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on', x===b));
+}));
+
+function fail(t,p){ $('#mT').textContent=t; $('#mP').textContent=p; $('#msg').classList.add('on'); }
+
+/* ============================================================
+   เชเดอร์: วิดีโอ alpha-packed (ครึ่งบน = สี, ครึ่งล่าง = alpha)
+   สีถูก premultiply มาแล้วตอน encode ขอบจึงเนียนไม่มีขลิบฟ้า
+   ============================================================ */
+const VERT = `varying vec2 vUv; void main(){ vUv=uv;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+const FRAG = `varying vec2 vUv; uniform sampler2D map; uniform float opacity;
+  void main(){
+    vec3 c = texture2D(map, vec2(vUv.x, vUv.y*0.5 + 0.5)).rgb;
+    float a = texture2D(map, vec2(vUv.x, vUv.y*0.5)).r;
+    if(a < 0.012) discard;
+    gl_FragColor = vec4(c*opacity, a*opacity);
+  }`;
+
+/* ---------- ฉาก ---------- */
+let renderer, scene, cam, reticle, group, video, tex, plane, tag;
+let mode='fallback', xrHitSource=null, placed=false, moving=true;
+let scale=1, pinch0=0, scale0=1;
+const applyScale = () => group.scale.setScalar(scale * SURFACES[surface].scale);
+
+function buildScene(){
+  scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.01, 100);
+  cam.position.set(0, SURFACES[surface].drop, 0);
+
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // ไม่แปลงค่าตอนออกจอ
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.domElement.className='gl';
+  document.body.appendChild(renderer.domElement);
+
+  reticle = makeQuadrat();
+  reticle.scale.setScalar(SURFACES[surface].scale < 1 ? 0.42 : 1);
+  reticle.visible = false;
+  scene.add(reticle);
+
+  group = new THREE.Group();
+  group.visible = false;
+  scene.add(group);
+
+  addEventListener('resize',()=>{
+    cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+}
+
+/* เรติเคิลเป็นกรอบ quadrat แบบที่นักนิเวศวิทยาวางบนพื้นป่าเพื่อนับชนิด */
+function makeQuadrat(){
+  const g = new THREE.Group(), R = 0.28, T = 0.10;
+  const mat = new THREE.LineBasicMaterial({color:0xA9C0A2, transparent:true, opacity:.95});
+  const seg = pts => g.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(p[0],0,p[1]))), mat));
+  for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    seg([[sx*R, sz*R],[sx*(R-T), sz*R]]);
+    seg([[sx*R, sz*R],[sx*R, sz*(R-T)]]);
+  }
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.022,0.03,32),
+    new THREE.MeshBasicMaterial({color:0xE0457B, transparent:true, opacity:.9, side:THREE.DoubleSide}));
+  ring.rotation.x = -Math.PI/2; g.add(ring);
+  return g;
+}
+
+/* ป้ายชื่อแบบแท็กพรรณไม้อัดแห้ง */
+function makeTag(s){
+  const c = document.createElement('canvas'); c.width=768; c.height=224;
+  const x = c.getContext('2d');
+  x.fillStyle='#EBE6D8'; x.fillRect(0,0,768,224);
+  x.fillStyle='#38553F'; x.fillRect(0,0,768,7);
+  x.fillStyle='#101C16'; x.font='600 54px Trirong, serif';       x.fillText(s.th, 38, 96);
+  x.fillStyle='#38553F'; x.font='italic 32px Trirong, serif';    x.fillText(s.sci, 38, 146);
+  x.fillStyle='#7A8C74'; x.font='500 24px "IBM Plex Mono", monospace';
+  x.fillText(s.code, 38, 192);
+  x.textAlign='right'; x.fillText('ป่าดงพงไพร', 730, 192);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.1225),
+    new THREE.MeshBasicMaterial({map:t, transparent:true}));
+  return m;
+}
+
+/* ---------- เริ่ม AR ---------- */
+async function launch(spec){
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('nocam');
+
+    // สร้าง <video> และสั่งเล่นภายใน user gesture — จำเป็นสำหรับ iOS
+    video = document.createElement('video');
+    video.src = spec.src; video.loop = true; video.muted = true;
+    video.playsInline = true; video.setAttribute('playsinline','');
+    video.setAttribute('webkit-playsinline',''); video.crossOrigin='anonymous';
+    video.preload='auto';
+    await video.play().catch(()=>{});
+
+    buildScene();
+
+    tex = new THREE.VideoTexture(video);
+    tex.colorSpace = THREE.NoColorSpace;   // ค่าดิบ ห้ามแปลง มิฉะนั้น alpha เพี้ยน
+    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+
+    const h = spec.width * 9/16;
+    plane = new THREE.Mesh(new THREE.PlaneGeometry(spec.width, h),
+      new THREE.ShaderMaterial({
+        vertexShader:VERT, fragmentShader:FRAG,
+        uniforms:{ map:{value:tex}, opacity:{value:1} },
+        transparent:true, premultipliedAlpha:true, depthWrite:false, side:THREE.DoubleSide
+      }));
+    plane.position.y = spec.baseY;
+    group.add(plane);
+
+    tag = makeTag(spec);
+    tag.position.set(0, 0.075, 0.22);
+    tag.rotation.x = -0.32;
+    group.add(tag);
+
+    $('#tName').textContent = spec.th;
+    intro.style.display='none'; arUI.classList.add('on');
+
+    // WebXR ก่อน ถ้าไม่มีค่อยถอยไปโหมด gyro
+    const xrOK = navigator.xr && await navigator.xr.isSessionSupported('immersive-ar').catch(()=>false);
+    if(xrOK) await startXR(); else await startFallback();
+
+  }catch(e){
+    console.error(e);
+    fail('เปิดกล้องไม่ได้','ตรวจว่าเปิดผ่าน https และอนุญาตให้เว็บใช้กล้องแล้ว หากยังไม่ได้ ลองเปิดใน Chrome หรือ Safari โดยตรงแทนเบราว์เซอร์ในแอปอื่น');
+  }
+}
+
+/* ---------- โหมด A: WebXR (Android) ---------- */
+async function startXR(){
+  mode='xr';
+  renderer.xr.enabled = true;
+  const session = await navigator.xr.requestSession('immersive-ar',{
+    requiredFeatures:['hit-test'], optionalFeatures:['dom-overlay'],
+    domOverlay:{root: arUI}
+  });
+  renderer.xr.setReferenceSpaceType('local');
+  await renderer.xr.setSession(session);
+  const viewer = await session.requestReferenceSpace('viewer');
+  xrHitSource = await session.requestHitTestSource({space: viewer});
+  session.addEventListener('end',()=>location.reload());
+  renderer.setAnimationLoop(renderXR);
+}
+
+function renderXR(_,frame){
+  if(frame && moving && xrHitSource){
+    const ref = renderer.xr.getReferenceSpace();
+    const hits = frame.getHitTestResults(xrHitSource);
+    if(hits.length){
+      const p = hits[0].getPose(ref);
+      reticle.visible = true;
+      reticle.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(p.transform.matrix));
+      ready(true);
+    } else { reticle.visible=false; ready(false); }
+  }
+  billboard(renderer.xr.getCamera());
+  renderer.render(scene, cam);
+}
+
+/* ---------- โหมด B: กล้อง + ไจโร (iOS และเครื่องที่ไม่มี WebXR) ---------- */
+const q = { alpha:0, beta:0, gamma:0, orient:0, live:false };
+
+async function startFallback(){
+  mode='fallback';
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false });
+  feed.srcObject = stream; feed.style.display='block';
+  await feed.play().catch(()=>{});
+
+  if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission){
+    try{ q.live = (await DeviceOrientationEvent.requestPermission())==='granted'; }catch(_){ q.live=false; }
+  } else q.live = true;
+
+  if(!q.live){
+    // ไม่มีไจโร: ก้มกล้องลงคงที่ ยังวางได้แต่จะไม่ยึดติดกับโลกจริงเวลาหันเครื่อง
+    cam.rotation.set(-0.42, 0, 0);
+    hint.textContent = 'เครื่องนี้ไม่ให้ใช้เซ็นเซอร์การหมุน วางได้แต่ภาพจะไม่ตรึงกับพื้น';
+  }
+
+  if(q.live) addEventListener('deviceorientation', e=>{
+    if(e.alpha==null) return;
+    q.alpha=THREE.MathUtils.degToRad(e.alpha);
+    q.beta =THREE.MathUtils.degToRad(e.beta);
+    q.gamma=THREE.MathUtils.degToRad(e.gamma);
+    q.orient=THREE.MathUtils.degToRad(screen.orientation?.angle||window.orientation||0);
+  }, true);
+
+  renderer.setAnimationLoop(renderFallback);
+}
+
+const _zee=new THREE.Vector3(0,0,1), _euler=new THREE.Euler(), _q0=new THREE.Quaternion(),
+      _q1=new THREE.Quaternion(-Math.SQRT1_2,0,0,Math.SQRT1_2);
+function orientCamera(){
+  if(!q.live) return;
+  _euler.set(q.beta, q.alpha, -q.gamma, 'YXZ');
+  cam.quaternion.setFromEuler(_euler).multiply(_q1)
+     .multiply(_q0.setFromAxisAngle(_zee, -q.orient));
+}
+
+const _ray=new THREE.Raycaster(), _ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),
+      _hit=new THREE.Vector3();
+function renderFallback(){
+  orientCamera();
+  if(moving){
+    _ray.setFromCamera(new THREE.Vector2(0,0), cam);
+    const maxD = surface==='table' ? 2.5 : 8;
+    const ok = _ray.ray.intersectPlane(_ground,_hit) && _hit.distanceTo(cam.position) < maxD;
+    reticle.visible = !!ok;
+    if(ok) reticle.position.copy(_hit);
+    ready(!!ok);
+  }
+  billboard(cam);
+  renderer.render(scene, cam);
+}
+
+/* ---------- ร่วมกัน ---------- */
+function billboard(activeCam){            // หันเข้าหาผู้ชมเฉพาะแกน Y ไม่ให้ล้ม
+  if(!group.visible) return;
+  const p = new THREE.Vector3(); activeCam.getWorldPosition(p);
+  group.rotation.y = Math.atan2(p.x - group.position.x, p.z - group.position.z);
+}
+
+let wasReady=null;
+function ready(v){
+  if(v===wasReady) return; wasReady=v;
+  dot.classList.toggle('ready', v);
+  bPlace.disabled = !v;
+  bPlace.style.opacity = v ? 1 : .45;
+  const where = surface==='table' ? 'โต๊ะ' : 'พื้น';
+  hint.textContent = v ? `แตะ “วางตรงนี้” เพื่อวางลง${where}`
+                       : `เล็งกล้องไปที่${where} ` + (surface==='table' ? 'ห่างประมาณครึ่งเมตร' : 'ห่างประมาณ 1–2 เมตร');
+}
+
+bPlace.addEventListener('click',()=>{
+  if(!reticle.visible) return;
+  group.position.copy(reticle.position);
+  group.visible = true; reticle.visible = false;
+  applyScale();
+  moving = false; placed = true;
+  video.currentTime = 0; video.play().catch(()=>{});
+  bPlace.hidden = true; bReplay.hidden = false; bMove.hidden = false;
+  hint.textContent = 'เดินรอบดูได้ · ใช้สองนิ้วบีบเพื่อย่อขยาย';
+  setTimeout(()=>hint.style.opacity=0, 4200);
+});
+
+bReplay.addEventListener('click',()=>{ video.currentTime=0; video.play().catch(()=>{}); });
+
+bMove.addEventListener('click',()=>{
+  moving = true; placed = false; group.visible = false; wasReady = null;
+  bPlace.hidden = false; bReplay.hidden = true; bMove.hidden = true;
+  hint.style.opacity = 1;
+});
+
+$('#bExit').addEventListener('click',()=>location.reload());
+
+/* บีบสองนิ้วเพื่อย่อขยาย */
+addEventListener('touchstart',e=>{
+  if(e.touches.length===2 && placed){
+    pinch0 = Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                        e.touches[0].clientY-e.touches[1].clientY);
+    scale0 = scale;
+  }
+},{passive:true});
+addEventListener('touchmove',e=>{
+  if(e.touches.length===2 && placed && pinch0){
+    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                         e.touches[0].clientY-e.touches[1].clientY);
+    scale = THREE.MathUtils.clamp(scale0 * d/pinch0, 0.35, 3.5);
+    applyScale();
+  }
+},{passive:true});
+addEventListener('touchend',()=>{ pinch0=0; },{passive:true});
+
+ready(false);
+</script>
+</body>
+</html>
