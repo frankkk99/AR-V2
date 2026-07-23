@@ -2,541 +2,190 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#101C16">
-<title>ป่าดงพงไพร · AR</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Trirong:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ตรวจเครื่อง · ป่าดงพงไพร AR</title>
 <style>
-:root{
-  --ink:#101C16; --ink-2:#1B2E24; --moss:#38553F;
-  --lichen:#A9C0A2; --paper:#EBE6D8; --bloom:#E0457B;
-  --edge:rgba(169,192,162,.28);
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--paper);
-  font-family:"IBM Plex Sans Thai",system-ui,sans-serif;overscroll-behavior:none}
-#feed{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000}
-canvas.gl{position:fixed;inset:0;display:block}
-
-/* ---------- intro ---------- */
-#intro{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
-  padding:calc(env(safe-area-inset-top) + 30px) 22px calc(env(safe-area-inset-bottom) + 22px);
-  background:
-    radial-gradient(120% 70% at 50% 0%,#22392C 0%,var(--ink) 62%),
-    var(--ink);overflow-y:auto}
-.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--lichen);opacity:.75}
-h1{font-family:Trirong,serif;font-weight:600;font-size:clamp(34px,10vw,48px);
-  line-height:1.12;margin:10px 0 0;letter-spacing:-.01em}
-h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
-.lede{margin-top:14px;font-size:15px;line-height:1.72;color:#CDD8C8;max-width:34ch}
-
-.tray{margin-top:auto;padding-top:26px;display:flex;flex-direction:column;gap:10px}
-.tray-label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;
-  color:var(--lichen);opacity:.7;padding-bottom:4px;border-bottom:1px solid var(--edge)}
-.card{display:grid;grid-template-columns:74px 1fr auto;align-items:center;gap:16px;
-  padding:12px 14px;border:1px solid var(--edge);border-radius:3px;background:rgba(27,46,36,.5);
-  cursor:pointer;transition:border-color .22s,background .22s,transform .12s;text-align:start;
-  color:inherit;font:inherit;width:100%}
-.card:hover,.card:focus-visible{border-color:var(--lichen);background:rgba(56,85,63,.55)}
-.card:active{transform:scale(.985)}
-.card:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
-.card img{width:74px;height:60px;object-fit:contain;object-position:center bottom;
-  filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
-.card .th{font-family:Trirong,serif;font-size:20px;line-height:1.3}
-.card .sci{font-style:italic;font-size:12.5px;color:var(--lichen);opacity:.85;margin-top:2px}
-.card .code{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--lichen);opacity:.6}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.seg-b{background:rgba(27,46,36,.5);border:1px solid var(--edge);color:#9FB399;
-  border-radius:3px;padding:11px 8px;font:inherit;font-size:14.5px;cursor:pointer;
-  transition:border-color .2s,color .2s,background .2s}
-.seg-b.on{border-color:var(--lichen);color:var(--paper);background:rgba(56,85,63,.6)}
-.seg-b:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
-.note{margin-top:16px;font-size:12.5px;line-height:1.7;color:#8FA48A}
-
-/* ---------- AR chrome ---------- */
-#ar{position:fixed;inset:0;z-index:30;display:none;pointer-events:none}
-#ar.on{display:block}
-.topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
-  padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
-  background:linear-gradient(to bottom,rgba(16,28,22,.82),transparent);pointer-events:auto}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--bloom);flex:none}
-.dot.ready{background:var(--lichen)}
-.topbar .name{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;opacity:.85}
-.exit{margin-inline-start:auto;background:none;border:1px solid var(--edge);color:var(--paper);
-  border-radius:3px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
-
-.hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 118px);
-  transform:translateX(-50%);background:rgba(16,28,22,.86);border:1px solid var(--edge);
-  border-radius:3px;padding:9px 16px;font-size:13.5px;white-space:nowrap;
-  backdrop-filter:blur(8px);transition:opacity .3s}
-
-.dock{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:9px;
-  padding:16px 16px calc(env(safe-area-inset-bottom) + 18px);
-  background:linear-gradient(to top,rgba(16,28,22,.86),transparent);pointer-events:auto}
-.btn{background:rgba(27,46,36,.78);border:1px solid var(--edge);color:var(--paper);
-  border-radius:3px;padding:11px 17px;font:inherit;font-size:14px;cursor:pointer;
-  backdrop-filter:blur(8px)}
-.btn:active{background:var(--moss)}
-.btn:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
-.btn.hero{background:var(--paper);color:var(--ink);border-color:var(--paper);font-weight:600}
-
-#stage{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;
-  pointer-events:none;z-index:-1;overflow:hidden}
-#hud{position:fixed;left:0;bottom:0;z-index:70;display:none;padding:8px 10px;
-  background:rgba(0,0,0,.72);color:#7BD88F;font:11px/1.5 ui-monospace,monospace;
-  white-space:pre;pointer-events:none;max-width:100vw}
-#hud.on{display:block}
-#msg{position:fixed;inset:0;z-index:60;display:none;place-items:center;padding:30px;
-  background:rgba(16,28,22,.96);text-align:center}
-#msg.on{display:grid}
-#msg .box{max-width:36ch}
-#msg h2{font-family:Trirong,serif;font-size:24px;margin-bottom:12px}
-#msg p{font-size:14.5px;line-height:1.75;color:#CDD8C8;margin-bottom:20px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+:root{--ink:#101C16;--paper:#EBE6D8;--lichen:#A9C0A2;--ok:#7BD88F;--bad:#FF6B6B;--warn:#FFD166}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--paper);font-family:system-ui,sans-serif;
+  padding:24px 18px calc(env(safe-area-inset-bottom) + 40px);line-height:1.6}
+h1{font-size:20px;margin-bottom:4px}
+.sub{font-size:13px;color:var(--lichen);margin-bottom:20px}
+button{background:var(--paper);color:var(--ink);border:0;border-radius:4px;
+  padding:14px 20px;font:inherit;font-weight:600;font-size:16px;width:100%;margin-bottom:18px}
+.row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(169,192,162,.18);
+  font-size:13.5px;align-items:flex-start}
+.row b{flex:none;width:16px}
+.row .k{flex:1}
+.row .v{font-family:ui-monospace,monospace;font-size:12px;color:var(--lichen);
+  text-align:right;word-break:break-all;max-width:52%}
+.ok b{color:var(--ok)} .bad b{color:var(--bad)} .warn b{color:var(--warn)}
+#sum{margin-top:20px;padding:14px;border-radius:4px;background:rgba(169,192,162,.1);
+  font-size:14px;display:none}
+#sum.on{display:block}
+canvas{width:100%;max-width:320px;margin-top:14px;border:1px solid rgba(169,192,162,.3);
+  border-radius:3px;display:none;background:
+  repeating-conic-gradient(#555 0 25%,#777 0 50%) 50%/16px 16px}
+canvas.on{display:block}
+.cap{font-size:12px;color:var(--lichen);margin-top:6px}
 </style>
 </head>
 <body>
+<h1>ตรวจเครื่อง</h1>
+<p class="sub">กดปุ่มแล้วรอสักครู่ ระบบจะไล่ทดสอบทีละขั้นจนกว่าจะเจอจุดที่ล้ม</p>
+<button id="go">เริ่มตรวจ</button>
+<div id="out"></div>
+<canvas id="cv" width="320" height="180"></canvas>
+<p class="cap" id="cap"></p>
+<div id="sum"></div>
 
-<video id="feed" playsinline muted autoplay></video>
-<div id="stage"></div>
-<div id="hud"></div>
+<script>
+const out=document.getElementById('out'), sum=document.getElementById('sum');
+const fails=[];
+function add(state,k,v){
+  const d=document.createElement('div');
+  d.className='row '+state;
+  d.innerHTML=`<b>${state==='ok'?'✓':state==='bad'?'✗':'!'}</b>
+    <span class="k">${k}</span><span class="v">${v??''}</span>`;
+  out.appendChild(d);
+  if(state==='bad') fails.push(k);
+}
 
-<section id="intro">
-  <div class="eyebrow">พิพิธภัณฑ์ป่าดงพงไพร</div>
-  <h1>ยกป่ามาไว้<br><em>ตรงหน้าคุณ</em></h1>
-  <p class="lede">เลือกสิ่งมีชีวิตหนึ่งชนิด แล้ววางลงบนพื้นตรงที่คุณยืนอยู่ เดินรอบดูได้ทุกด้าน</p>
+document.getElementById('go').addEventListener('click', run, {once:true});
 
-  <div class="tray">
-    <div class="tray-label">วางลงบน</div>
-    <div class="seg" id="seg">
-      <button class="seg-b on" data-s="floor">พื้นห้อง</button>
-      <button class="seg-b" data-s="table">บนโต๊ะ</button>
-    </div>
-    <div class="tray-label" style="margin-top:14px">เลือกตัวอย่าง / 3 ชนิด</div>
-    <div id="cards"></div>
-    <p class="note">ต้องใช้กล้อง กรุณากด “อนุญาต” เมื่อเบราว์เซอร์ถาม · ใช้ได้ดีที่สุดในที่ที่มีแสงพอและมีพื้นโล่งประมาณ 2 เมตร</p>
-  </div>
-</section>
+async function run(){
+  document.getElementById('go').textContent='กำลังตรวจ…';
+  out.innerHTML='';
 
-<div id="ar">
-  <div class="topbar">
-    <span class="dot" id="dot"></span>
-    <span class="name" id="tName">—</span>
-    <button class="exit" id="bExit">ออก</button>
-  </div>
-  <div class="hint" id="hint">เล็งกล้องไปที่พื้น</div>
-  <div class="dock">
-    <button class="btn hero" id="bPlace">วางตรงนี้</button>
-    <button class="btn" id="bReplay" hidden>เล่นอีกครั้ง</button>
-    <button class="btn" id="bMove" hidden>ย้ายที่</button>
-  </div>
-</div>
+  /* 1. บริบทพื้นฐาน */
+  add('ok','ที่อยู่เว็บ', location.protocol+'//'+location.host);
+  add(isSecureContext?'ok':'bad','เปิดผ่าน https', isSecureContext?'ใช่':'ไม่ใช่ — กล้องจะใช้ไม่ได้');
+  add('ok','เบราว์เซอร์', navigator.userAgent.slice(0,60));
+  const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const inApp=/FBAN|FBAV|Line|Instagram|Messenger/i.test(navigator.userAgent);
+  add(inApp?'bad':'ok','เปิดในเบราว์เซอร์จริง', inApp?'เปิดอยู่ในแอป (LINE/FB) — ให้กด “เปิดใน Safari/Chrome”':'ใช่');
 
-<div id="msg"><div class="box"><h2 id="mT"></h2><p id="mP"></p>
-  <button class="btn hero" onclick="location.reload()">ลองใหม่</button></div></div>
+  /* 2. WebGL */
+  const gl=document.createElement('canvas').getContext('webgl2')||
+           document.createElement('canvas').getContext('webgl');
+  add(gl?'ok':'bad','WebGL', gl? (gl instanceof WebGL2RenderingContext?'WebGL2':'WebGL1') : 'ไม่รองรับ');
 
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
-</script>
-<script type="module">
-import * as THREE from 'three';
-
-/* วิดีโอ alpha-packed เก็บค่า alpha ไว้ใน "ช่องสี" ของครึ่งล่าง ถ้าปล่อยให้ three
-   ทำ sRGB→linear ตามปกติ ค่า alpha จะถูกแปลงไปด้วย (0.5 จะกลายเป็น 0.21)
-   ขอบวัตถุจะจางผิดหมด จึงปิด color management แล้วส่งค่าดิบผ่านตรง ๆ
-   ฉากนี้ไม่มีแสงหรือวัสดุ PBR จึงไม่เสียอะไร */
-THREE.ColorManagement.enabled = false;
-
-/* ============================================================
-   ตั้งค่าตัวอย่างแต่ละชนิด — แก้ชื่อ/ขนาดจริงได้ที่นี่จุดเดียว
-   width  = ความกว้างของเฟรมวิดีโอในโลกจริง (เมตร)
-   baseY  = ความสูงจากพื้นถึงจุดกึ่งกลางเฟรม (เมตร)
-   ============================================================ */
-const SPECIMENS = [
-  { id:'mushroom', th:'เห็ดป่าเต็งรัง', sci:'Fungi spp.',            code:'FNG-01',
-    file:'mushroom.mp4',  width:1.15, baseY:0.32 },
-  { id:'tulip',    th:'ดอกกระเจียว',    sci:'Curcuma alismatifolia', code:'CUR-02',
-    file:'tulip.mp4',     width:1.50, baseY:0.45 },
-  { id:'butterfly',th:'ผีเสื้อ',        sci:'Lepidoptera',           code:'LEP-03',
-    file:'butterfly.mp4', width:2.40, baseY:1.30 },
-];
-/* รูปในเมนูฝังมาในไฟล์นี้แล้ว ไม่ต้องอัปไฟล์ภาพเพิ่ม */
-const THUMBS = {"mushroom": "data:image/png;base64,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", "butterfly": "data:image/png;base64,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", "tulip": "data:image/png;base64,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"};
-/* หาว่าไฟล์วิดีโออยู่ที่ root หรือในโฟลเดอร์ video/ แล้วใช้อันที่เจอ
-   กันพลาดเวลาย้ายไฟล์ไปมา */
-let BASE = '';
-async function resolveBase(){
-  for(const b of ['', 'video/']){
-    try{ const r = await fetch(b+SPECIMENS[0].file, {method:'HEAD'}); if(r.ok) return b; }catch(_){}
+  /* 3. ไฟล์วิดีโอเข้าถึงได้ไหม — ลองทั้ง root และโฟลเดอร์ video/ */
+  let VSRC=null;
+  for(const cand of ['tulip.mp4','video/tulip.mp4']){
+    try{
+      const r=await fetch(cand,{method:'GET',headers:{Range:'bytes=0-1023'}});
+      if(r.ok||r.status===206){ VSRC=cand;
+        add('ok','เจอไฟล์วิดีโอ', cand+' · HTTP '+r.status+' · '+(r.headers.get('content-type')||'?'));
+        break; }
+      add('warn','ลอง '+cand,'HTTP '+r.status);
+    }catch(e){ add('warn','ลอง '+cand, e.message); }
   }
-  return '';
-}
-const EYE = 1.45; // ความสูงกล้องโดยประมาณ ใช้ในโหมดสำรอง (เมตร)
+  if(!VSRC) add('bad','ไฟล์วิดีโอ','หาไม่เจอทั้ง tulip.mp4 และ video/tulip.mp4 — ตรวจว่าอัปขึ้นครบและชื่อตรง');
 
-/* พื้นผิวที่จะวาง — โต๊ะเตี้ยกว่าพื้นและเล็กกว่ามาก จึงต้องย่อขนาดตาม
-   drop  = ระยะจากกล้องลงไปถึงพื้นผิว ใช้เฉพาะโหมดสำรอง (iOS)
-           โหมด WebXR อ่านพื้นผิวจริงอยู่แล้ว ค่านี้ไม่มีผล
-   scale = ตัวคูณขนาดวัตถุ */
-const SURFACES = {
-  floor: { label:'พื้นห้อง', drop:EYE,  scale:1.00 },
-  table: { label:'บนโต๊ะ',   drop:0.55, scale:0.28 },
-};
-let surface = 'floor';
+  /* 4. วิดีโอ decode ได้ไหม — ต้องอยู่ใน DOM ด้วย */
+  const v=document.createElement('video');
+  v.src = VSRC || 'tulip.mp4'; v.muted=true; v.loop=true; v.playsInline=true;
+  v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+  v.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none';
+  document.body.appendChild(v);
 
-const $ = s => document.querySelector(s);
-const feed=$('#feed'), intro=$('#intro'), arUI=$('#ar'), hint=$('#hint'), dot=$('#dot');
-const bPlace=$('#bPlace'), bReplay=$('#bReplay'), bMove=$('#bMove');
+  let playErr=null;
+  try{ await v.play(); }catch(e){ playErr=e; }
+  add(playErr?'bad':'ok','สั่งเล่นวิดีโอ', playErr? (playErr.name+': '+playErr.message) : 'สำเร็จ');
 
-/* ---------- เมนู ---------- */
-$('#cards').innerHTML = SPECIMENS.map(s=>`
-  <button class="card" data-id="${s.id}">
-    <img src="${THUMBS[s.id]}" alt="">
-    <span><span class="th">${s.th}</span><br>
-      <span class="sci">${s.sci}</span></span>
-    <span class="code">${s.code}</span>
-  </button>`).join('');
-document.querySelectorAll('.card').forEach(c=>
-  c.addEventListener('click',()=>launch(SPECIMENS.find(s=>s.id===c.dataset.id))));
-
-document.querySelectorAll('.seg-b').forEach(b=>b.addEventListener('click',()=>{
-  surface = b.dataset.s;
-  document.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on', x===b));
-}));
-
-function fail(t,p){ $('#mT').textContent=t; $('#mP').textContent=p; $('#msg').classList.add('on'); }
-
-/* ============================================================
-   เชเดอร์: วิดีโอ alpha-packed (ครึ่งบน = สี, ครึ่งล่าง = alpha)
-   สีถูก premultiply มาแล้วตอน encode ขอบจึงเนียนไม่มีขลิบฟ้า
-   ============================================================ */
-const VERT = `varying vec2 vUv; void main(){ vUv=uv;
-  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
-const FRAG = `varying vec2 vUv; uniform sampler2D map; uniform float opacity;
-  void main(){
-    vec3 c = texture2D(map, vec2(vUv.x, vUv.y*0.5 + 0.5)).rgb;
-    float a = texture2D(map, vec2(vUv.x, vUv.y*0.5)).r;
-    if(a < 0.012) discard;
-    gl_FragColor = vec4(c*opacity, a*opacity);
-  }`;
-
-/* ---------- ฉาก ---------- */
-let renderer, scene, cam, reticle, group, video, tex, plane, tag;
-let mode='fallback', xrHitSource=null, placed=false, moving=true;
-let scale=1, pinch0=0, scale0=1;
-const applyScale = () => group.scale.setScalar(scale * SURFACES[surface].scale);
-
-function buildScene(){
-  scene = new THREE.Scene();
-  cam = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.01, 100);
-  cam.position.set(0, SURFACES[surface].drop, 0);
-
-  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
-  renderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // ไม่แปลงค่าตอนออกจอ
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.domElement.className='gl';
-  document.body.appendChild(renderer.domElement);
-
-  reticle = makeQuadrat();
-  reticle.scale.setScalar(SURFACES[surface].scale < 1 ? 0.42 : 1);
-  reticle.visible = false;
-  scene.add(reticle);
-
-  group = new THREE.Group();
-  group.visible = false;
-  scene.add(group);
-
-  addEventListener('resize',()=>{
-    cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
+  const gotData = await new Promise(res=>{
+    if(v.readyState>=2) return res(true);
+    const t=setTimeout(()=>res(false),8000);
+    v.addEventListener('loadeddata',()=>{clearTimeout(t);res(true)},{once:true});
+    v.addEventListener('error',()=>{clearTimeout(t);res(false)},{once:true});
   });
-}
+  add(gotData?'ok':'bad','วิดีโอมีข้อมูลภาพ',
+      gotData? `${v.videoWidth}×${v.videoHeight} · ${v.duration.toFixed(1)} วิ` : 'ไม่มาภายใน 8 วิ');
 
-/* เรติเคิลเป็นกรอบ quadrat แบบที่นักนิเวศวิทยาวางบนพื้นป่าเพื่อนับชนิด */
-function makeQuadrat(){
-  const g = new THREE.Group(), R = 0.28, T = 0.10;
-  const mat = new THREE.LineBasicMaterial({color:0xA9C0A2, transparent:true, opacity:.95});
-  const seg = pts => g.add(new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(p[0],0,p[1]))), mat));
-  for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
-    seg([[sx*R, sz*R],[sx*(R-T), sz*R]]);
-    seg([[sx*R, sz*R],[sx*R, sz*(R-T)]]);
-  }
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.022,0.03,32),
-    new THREE.MeshBasicMaterial({color:0xE0457B, transparent:true, opacity:.9, side:THREE.DoubleSide}));
-  ring.rotation.x = -Math.PI/2; g.add(ring);
-  return g;
-}
+  await new Promise(r=>setTimeout(r,900));
+  add(v.currentTime>0?'ok':'bad','วิดีโอเดินหน้าจริง','currentTime = '+v.currentTime.toFixed(2));
 
-/* ป้ายชื่อแบบแท็กพรรณไม้อัดแห้ง */
-function makeTag(s){
-  const c = document.createElement('canvas'); c.width=768; c.height=224;
-  const x = c.getContext('2d');
-  x.fillStyle='#EBE6D8'; x.fillRect(0,0,768,224);
-  x.fillStyle='#38553F'; x.fillRect(0,0,768,7);
-  x.fillStyle='#101C16'; x.font='600 54px Trirong, serif';       x.fillText(s.th, 38, 96);
-  x.fillStyle='#38553F'; x.font='italic 32px Trirong, serif';    x.fillText(s.sci, 38, 146);
-  x.fillStyle='#7A8C74'; x.font='500 24px "IBM Plex Mono", monospace';
-  x.fillText(s.code, 38, 192);
-  x.textAlign='right'; x.fillText('ป่าดงพงไพร', 730, 192);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.1225),
-    new THREE.MeshBasicMaterial({map:t, transparent:true}));
-  return m;
-}
+  /* 5. ข้อมูล alpha อยู่ในเฟรมจริงไหม */
+  if(gotData && v.videoWidth){
+    const cv=document.getElementById('cv'), cx=cv.getContext('2d');
+    const W=v.videoWidth, H=v.videoHeight;
+    const t=document.createElement('canvas'); t.width=W; t.height=H;
+    const tx=t.getContext('2d',{willReadFrequently:true});
+    tx.drawImage(v,0,0,W,H);
+    let px;
+    try{ px=tx.getImageData(0,0,W,H).data; }catch(e){ px=null;
+      add('bad','อ่านพิกเซลจากวิดีโอ','ถูกบล็อก (CORS/tainted): '+e.message); }
 
-/* ---------- เริ่ม AR ---------- */
-/* ต้องไม่เป็น async: iOS ยอมให้ขอสิทธิ์เซ็นเซอร์เฉพาะตอนที่ยังอยู่ใน user gesture
-   ถ้า await อะไรก่อน จะหลุด gesture แล้ว requestPermission จะถูกปฏิเสธทันที */
-function launch(spec){
-  const orientReq = (typeof DeviceOrientationEvent!=='undefined'
-      && DeviceOrientationEvent.requestPermission)
-    ? DeviceOrientationEvent.requestPermission().catch(()=>'denied')
-    : Promise.resolve('granted');
+    if(px){
+      const at=(x,y)=>{const i=((y*W)+x)*4; return [px[i],px[i+1],px[i+2]];};
+      const halfH=H/2;
+      const cornerTop=at(4,4), cornerBot=at(4,halfH+4);
+      const midBot=at(W>>1, halfH+Math.floor(halfH*0.75));
+      add(H===1080&&W===960?'ok':'warn','ขนาดเฟรม alpha-packed',
+          `${W}×${H} ` + (H===1080&&W===960?'(ถูกต้อง)':'(คาดว่าควรเป็น 960×1080)'));
+      const bgDark = cornerTop[0]<12&&cornerTop[1]<12&&cornerTop[2]<12;
+      add(bgDark?'ok':'bad','ครึ่งบน = ภาพสี พื้นหลังดำ','มุมบนซ้าย rgb('+cornerTop.join(',')+')');
+      const alphaZero = cornerBot[0]<12;
+      add(alphaZero?'ok':'bad','ครึ่งล่าง = alpha พื้นหลังโปร่ง','มุมล่างซ้าย rgb('+cornerBot.join(',')+')');
+      const alphaSolid = midBot[0]>200;
+      add(alphaSolid?'ok':'warn','ครึ่งล่างมีบริเวณทึบ','กลางล่าง rgb('+midBot.join(',')+')');
 
-  video = document.createElement('video');
-  video.src = BASE + spec.file; video.loop = true; video.muted = true;
-  video.playsInline = true; video.setAttribute('playsinline','');
-  video.setAttribute('webkit-playsinline',''); video.preload = 'auto';
-  document.getElementById('stage').appendChild(video);   // ต้องอยู่ใน DOM ไม่งั้น iOS ไม่ decode
-
-  const playReq = video.play();
-  boot(spec, orientReq, playReq);
-}
-
-function videoReady(v, ms=12000){
-  return new Promise(res=>{
-    if(v.readyState>=2 && v.videoWidth) return res(true);
-    const t=setTimeout(()=>res(false), ms);
-    const ok=()=>{ clearTimeout(t); res(true); };
-    v.addEventListener('loadeddata', ok, {once:true});
-    v.addEventListener('error', ()=>{ clearTimeout(t); res(false); }, {once:true});
-  });
-}
-
-async function boot(spec, orientReq, playReq){
-  try{
-    if(!navigator.mediaDevices?.getUserMedia)
-      return fail('เบราว์เซอร์นี้ใช้กล้องไม่ได้',
-        'ถ้าเปิดจากลิงก์ในแอป LINE หรือ Facebook ให้กดเมนูมุมขวาบนแล้วเลือก “เปิดใน Safari” หรือ “เปิดใน Chrome” ก่อน');
-
-    $('#tName').textContent = spec.th;
-    intro.style.display='none'; arUI.classList.add('on');
-    hint.textContent = 'กำลังโหลดวิดีโอ…';
-
-    try{ await playReq; }catch(e){
-      return fail('เล่นวิดีโอไม่ได้', 'เบราว์เซอร์ปฏิเสธการเล่นอัตโนมัติ ('+e.name+') ลองปิดโหมดประหยัดพลังงานแล้วเปิดใหม่');
+      // ประกอบภาพจริงตามสูตรเชเดอร์ วางบนตารางหมากรุก
+      cv.width=320; cv.height=180;
+      const src=tx.getImageData(0,0,W,halfH), alp=tx.getImageData(0,halfH,W,halfH);
+      const o=cx.createImageData(W,halfH);
+      for(let i=0;i<W*halfH;i++){
+        o.data[i*4]=src.data[i*4]; o.data[i*4+1]=src.data[i*4+1];
+        o.data[i*4+2]=src.data[i*4+2]; o.data[i*4+3]=alp.data[i*4];
+      }
+      const tmp=document.createElement('canvas'); tmp.width=W; tmp.height=halfH;
+      tmp.getContext('2d').putImageData(o,0,0);
+      cx.clearRect(0,0,320,180); cx.drawImage(tmp,0,0,320,180);
+      cv.classList.add('on');
+      document.getElementById('cap').textContent =
+        'ภาพนี้คือผลลัพธ์ที่เชเดอร์ควรวาดออกมา ถ้าเห็นดอกกระเจียวบนตารางหมากรุก แปลว่าไฟล์วิดีโอไม่มีปัญหา';
     }
-    if(!await videoReady(video))
-      return fail('โหลดวิดีโอไม่สำเร็จ',
-        'หาไฟล์ ' + BASE + spec.file + ' ไม่เจอบนเซิร์ฟเวอร์ ลองเปิด diag.html เพื่อดูรายละเอียด');
-
-    buildScene();
-
-    tex = new THREE.VideoTexture(video);
-    tex.colorSpace = THREE.NoColorSpace;   // ค่าดิบ ห้ามแปลง มิฉะนั้น alpha เพี้ยน
-    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
-
-    const h = spec.width * 9/16;
-    plane = new THREE.Mesh(new THREE.PlaneGeometry(spec.width, h),
-      new THREE.ShaderMaterial({
-        vertexShader:VERT, fragmentShader:FRAG,
-        uniforms:{ map:{value:tex}, opacity:{value:1} },
-        transparent:true, premultipliedAlpha:true, depthWrite:false, side:THREE.DoubleSide
-      }));
-    plane.position.y = spec.baseY;
-    group.add(plane);
-
-    tag = makeTag(spec);
-    tag.position.set(0, 0.075, 0.22);
-    tag.rotation.x = -0.32;
-    group.add(tag);
-
-    const xrOK = navigator.xr && await navigator.xr.isSessionSupported('immersive-ar').catch(()=>false);
-    if(xrOK){ await startXR(); }
-    else { const g = await orientReq; await startFallback(g==='granted'); }
-
-  }catch(e){
-    console.error(e);
-    fail('เปิด AR ไม่ได้', e.message + ' — เปิด /diag.html เพื่อดูว่าติดขั้นตอนไหน');
   }
-}
 
-/* ---------- โหมด A: WebXR (Android) ---------- */
-async function startXR(){
-  mode='xr';
-  renderer.xr.enabled = true;
-  const session = await navigator.xr.requestSession('immersive-ar',{
-    requiredFeatures:['hit-test'], optionalFeatures:['dom-overlay'],
-    domOverlay:{root: arUI}
+  /* 6. กล้อง */
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    const tr=s.getVideoTracks()[0], st=tr.getSettings();
+    add('ok','กล้องหลัง',`${st.width}×${st.height}`);
+    s.getTracks().forEach(t=>t.stop());
+  }catch(e){ add('bad','กล้องหลัง', e.name+': '+e.message); }
+
+  /* 7. เซ็นเซอร์การหมุน */
+  if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission){
+    let g='error'; try{ g=await DeviceOrientationEvent.requestPermission(); }catch(e){ g=e.name; }
+    add(g==='granted'?'ok':'bad','สิทธิ์เซ็นเซอร์การหมุน', g);
+  } else add('ok','สิทธิ์เซ็นเซอร์การหมุน','ไม่ต้องขอ');
+
+  const live=await new Promise(res=>{
+    let done=false;
+    const h=e=>{ if(e.alpha!=null&&!done){done=true;window.removeEventListener('deviceorientation',h);
+      res(`α${e.alpha.toFixed(0)} β${e.beta.toFixed(0)} γ${e.gamma.toFixed(0)}`);} };
+    addEventListener('deviceorientation',h);
+    setTimeout(()=>{ if(!done){done=true;window.removeEventListener('deviceorientation',h);res(null);} },2500);
   });
-  renderer.xr.setReferenceSpaceType('local');
-  await renderer.xr.setSession(session);
-  const viewer = await session.requestReferenceSpace('viewer');
-  xrHitSource = await session.requestHitTestSource({space: viewer});
-  session.addEventListener('end',()=>location.reload());
-  renderer.setAnimationLoop(renderXR);
+  add(live?'ok':'bad','เซ็นเซอร์ส่งค่าจริง', live||'ไม่มีค่าเข้ามาใน 2.5 วิ');
+
+  /* 8. WebXR */
+  let xr=false;
+  try{ xr = !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')); }catch(e){}
+  add(xr?'ok':'warn','WebXR (จับพื้นจริง)', xr?'รองรับ — จะใช้โหมดนี้':'ไม่รองรับ — จะใช้โหมดไจโรแทน (ปกติสำหรับ iPhone)');
+
+  /* สรุป */
+  v.pause(); v.remove();
+  document.getElementById('go').textContent='ตรวจเสร็จแล้ว';
+  sum.classList.add('on');
+  sum.innerHTML = fails.length
+    ? '<b>เจอปัญหา '+fails.length+' จุด</b><br>' + fails.map(f=>'· '+f).join('<br>') +
+      '<br><br>ส่งภาพหน้าจอนี้มาได้เลย'
+    : '<b>ผ่านทุกข้อ</b><br>ถ้ายังไม่เห็นวัตถุ แปลว่าปัญหาอยู่ที่การวางตำแหน่งหรือขนาด ไม่ใช่ที่ไฟล์หรือสิทธิ์ ส่งภาพหน้าจอนี้มาได้เลย';
 }
-
-function renderXR(_,frame){
-  if(frame && moving && xrHitSource){
-    const ref = renderer.xr.getReferenceSpace();
-    const hits = frame.getHitTestResults(xrHitSource);
-    if(hits.length){
-      const p = hits[0].getPose(ref);
-      reticle.visible = true;
-      reticle.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(p.transform.matrix));
-      ready(true);
-    } else { reticle.visible=false; /* เปิด HUD ตรวจสถานะด้วย ?debug=1 ต่อท้าย URL */
-const DEBUG = new URLSearchParams(location.search).has('debug');
-if(DEBUG) $('#hud').classList.add('on');
-let hudN=0;
-function hud(){
-  if(!DEBUG || (hudN++ % 12)) return;
-  const p=group.position;
-  $('#hud').textContent =
-    `mode ${mode}  gyro ${q.live}\n`+
-    `video rs=${video?.readyState} t=${video?.currentTime.toFixed(1)} `+
-    `${video?.videoWidth}x${video?.videoHeight}\n`+
-    `cam  ${cam.position.x.toFixed(2)} ${cam.position.y.toFixed(2)} ${cam.position.z.toFixed(2)}\n`+
-    `obj  ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)} vis=${group.visible} s=${scale.toFixed(2)}\n`+
-    `reticle vis=${reticle.visible} placed=${placed}`;
-}
-
-ready(false);
-
-/* ปิดปุ่มไว้จนกว่าจะรู้ว่าไฟล์วิดีโออยู่ที่ไหน */
-document.querySelectorAll('.card').forEach(c=>c.disabled=true);
-resolveBase().then(b=>{
-  BASE = b;
-  document.querySelectorAll('.card').forEach(c=>c.disabled=false);
-  if(DEBUG) console.log('video base =', JSON.stringify(BASE));
-}); }
-  }
-  billboard(renderer.xr.getCamera());
-  hud();
-  renderer.render(scene, cam);
-}
-
-/* ---------- โหมด B: กล้อง + ไจโร (iOS และเครื่องที่ไม่มี WebXR) ---------- */
-const q = { alpha:0, beta:0, gamma:0, orient:0, live:false };
-
-async function startFallback(granted){
-  mode='fallback';
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false });
-  feed.srcObject = stream; feed.style.display='block';
-  await feed.play().catch(()=>{});
-
-  q.live = granted !== false;
-
-  if(!q.live){
-    // ไม่มีไจโร: ก้มกล้องลงคงที่ ยังวางได้แต่จะไม่ยึดติดกับโลกจริงเวลาหันเครื่อง
-    cam.rotation.set(-0.42, 0, 0);
-    hint.textContent = 'เครื่องนี้ไม่ให้ใช้เซ็นเซอร์การหมุน วางได้แต่ภาพจะไม่ตรึงกับพื้น';
-  }
-
-  if(q.live) addEventListener('deviceorientation', e=>{
-    if(e.alpha==null) return;
-    q.alpha=THREE.MathUtils.degToRad(e.alpha);
-    q.beta =THREE.MathUtils.degToRad(e.beta);
-    q.gamma=THREE.MathUtils.degToRad(e.gamma);
-    q.orient=THREE.MathUtils.degToRad(screen.orientation?.angle||window.orientation||0);
-  }, true);
-
-  renderer.setAnimationLoop(renderFallback);
-}
-
-const _zee=new THREE.Vector3(0,0,1), _euler=new THREE.Euler(), _q0=new THREE.Quaternion(),
-      _q1=new THREE.Quaternion(-Math.SQRT1_2,0,0,Math.SQRT1_2);
-function orientCamera(){
-  if(!q.live) return;
-  _euler.set(q.beta, q.alpha, -q.gamma, 'YXZ');
-  cam.quaternion.setFromEuler(_euler).multiply(_q1)
-     .multiply(_q0.setFromAxisAngle(_zee, -q.orient));
-}
-
-const _ray=new THREE.Raycaster(), _ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),
-      _hit=new THREE.Vector3();
-function renderFallback(){
-  orientCamera();
-  cam.updateMatrixWorld(true);        // ไม่งั้น raycast ใช้ค่าเฟรมก่อนหน้า
-  if(moving){
-    _ray.setFromCamera(new THREE.Vector2(0,0), cam);
-    const maxD = surface==='table' ? 2.5 : 8;
-    const ok = _ray.ray.intersectPlane(_ground,_hit) && _hit.distanceTo(cam.position) < maxD;
-    reticle.visible = !!ok;
-    if(ok) reticle.position.copy(_hit);
-    ready(!!ok);
-  }
-  billboard(cam);
-  hud();
-  renderer.render(scene, cam);
-}
-
-/* ---------- ร่วมกัน ---------- */
-function billboard(activeCam){            // หันเข้าหาผู้ชมเฉพาะแกน Y ไม่ให้ล้ม
-  if(!group.visible) return;
-  const p = new THREE.Vector3(); activeCam.getWorldPosition(p);
-  group.rotation.y = Math.atan2(p.x - group.position.x, p.z - group.position.z);
-}
-
-let wasReady=null;
-function ready(v){
-  if(v===wasReady) return; wasReady=v;
-  dot.classList.toggle('ready', v);
-  bPlace.disabled = !v;
-  bPlace.style.opacity = v ? 1 : .45;
-  const where = surface==='table' ? 'โต๊ะ' : 'พื้น';
-  hint.textContent = v ? `แตะ “วางตรงนี้” เพื่อวางลง${where}`
-                       : `เล็งกล้องไปที่${where} ` + (surface==='table' ? 'ห่างประมาณครึ่งเมตร' : 'ห่างประมาณ 1–2 เมตร');
-}
-
-bPlace.addEventListener('click',()=>{
-  if(!reticle.visible) return;
-  group.position.copy(reticle.position);
-  group.visible = true; reticle.visible = false;
-  applyScale();
-  moving = false; placed = true;
-  video.currentTime = 0; video.play().catch(()=>{});
-  bPlace.hidden = true; bReplay.hidden = false; bMove.hidden = false;
-  hint.textContent = 'เดินรอบดูได้ · ใช้สองนิ้วบีบเพื่อย่อขยาย';
-  setTimeout(()=>hint.style.opacity=0, 4200);
-});
-
-bReplay.addEventListener('click',()=>{ video.currentTime=0; video.play().catch(()=>{}); });
-
-bMove.addEventListener('click',()=>{
-  moving = true; placed = false; group.visible = false; wasReady = null;
-  bPlace.hidden = false; bReplay.hidden = true; bMove.hidden = true;
-  hint.style.opacity = 1;
-});
-
-$('#bExit').addEventListener('click',()=>location.reload());
-
-/* บีบสองนิ้วเพื่อย่อขยาย */
-addEventListener('touchstart',e=>{
-  if(e.touches.length===2 && placed){
-    pinch0 = Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
-                        e.touches[0].clientY-e.touches[1].clientY);
-    scale0 = scale;
-  }
-},{passive:true});
-addEventListener('touchmove',e=>{
-  if(e.touches.length===2 && placed && pinch0){
-    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
-                         e.touches[0].clientY-e.touches[1].clientY);
-    scale = THREE.MathUtils.clamp(scale0 * d/pinch0, 0.35, 3.5);
-    applyScale();
-  }
-},{passive:true});
-addEventListener('touchend',()=>{ pinch0=0; },{passive:true});
-
-ready(false);
 </script>
 </body>
 </html>
