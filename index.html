@@ -84,6 +84,12 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
 .btn:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
 .btn.hero{background:var(--paper);color:var(--ink);border-color:var(--paper);font-weight:600}
 
+#stage{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;
+  pointer-events:none;z-index:-1;overflow:hidden}
+#hud{position:fixed;left:0;bottom:0;z-index:70;display:none;padding:8px 10px;
+  background:rgba(0,0,0,.72);color:#7BD88F;font:11px/1.5 ui-monospace,monospace;
+  white-space:pre;pointer-events:none;max-width:100vw}
+#hud.on{display:block}
 #msg{position:fixed;inset:0;z-index:60;display:none;place-items:center;padding:30px;
   background:rgba(16,28,22,.96);text-align:center}
 #msg.on{display:grid}
@@ -96,6 +102,8 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
 <body>
 
 <video id="feed" playsinline muted autoplay></video>
+<div id="stage"></div>
+<div id="hud"></div>
 
 <section id="intro">
   <div class="eyebrow">พิพิธภัณฑ์ป่าดงพงไพร</div>
@@ -271,17 +279,50 @@ function makeTag(s){
 }
 
 /* ---------- เริ่ม AR ---------- */
-async function launch(spec){
-  try{
-    if(!navigator.mediaDevices?.getUserMedia) throw new Error('nocam');
+/* ต้องไม่เป็น async: iOS ยอมให้ขอสิทธิ์เซ็นเซอร์เฉพาะตอนที่ยังอยู่ใน user gesture
+   ถ้า await อะไรก่อน จะหลุด gesture แล้ว requestPermission จะถูกปฏิเสธทันที */
+function launch(spec){
+  const orientReq = (typeof DeviceOrientationEvent!=='undefined'
+      && DeviceOrientationEvent.requestPermission)
+    ? DeviceOrientationEvent.requestPermission().catch(()=>'denied')
+    : Promise.resolve('granted');
 
-    // สร้าง <video> และสั่งเล่นภายใน user gesture — จำเป็นสำหรับ iOS
-    video = document.createElement('video');
-    video.src = spec.src; video.loop = true; video.muted = true;
-    video.playsInline = true; video.setAttribute('playsinline','');
-    video.setAttribute('webkit-playsinline',''); video.crossOrigin='anonymous';
-    video.preload='auto';
-    await video.play().catch(()=>{});
+  video = document.createElement('video');
+  video.src = spec.src; video.loop = true; video.muted = true;
+  video.playsInline = true; video.setAttribute('playsinline','');
+  video.setAttribute('webkit-playsinline',''); video.preload = 'auto';
+  document.getElementById('stage').appendChild(video);   // ต้องอยู่ใน DOM ไม่งั้น iOS ไม่ decode
+
+  const playReq = video.play();
+  boot(spec, orientReq, playReq);
+}
+
+function videoReady(v, ms=12000){
+  return new Promise(res=>{
+    if(v.readyState>=2 && v.videoWidth) return res(true);
+    const t=setTimeout(()=>res(false), ms);
+    const ok=()=>{ clearTimeout(t); res(true); };
+    v.addEventListener('loadeddata', ok, {once:true});
+    v.addEventListener('error', ()=>{ clearTimeout(t); res(false); }, {once:true});
+  });
+}
+
+async function boot(spec, orientReq, playReq){
+  try{
+    if(!navigator.mediaDevices?.getUserMedia)
+      return fail('เบราว์เซอร์นี้ใช้กล้องไม่ได้',
+        'ถ้าเปิดจากลิงก์ในแอป LINE หรือ Facebook ให้กดเมนูมุมขวาบนแล้วเลือก “เปิดใน Safari” หรือ “เปิดใน Chrome” ก่อน');
+
+    $('#tName').textContent = spec.th;
+    intro.style.display='none'; arUI.classList.add('on');
+    hint.textContent = 'กำลังโหลดวิดีโอ…';
+
+    try{ await playReq; }catch(e){
+      return fail('เล่นวิดีโอไม่ได้', 'เบราว์เซอร์ปฏิเสธการเล่นอัตโนมัติ ('+e.name+') ลองปิดโหมดประหยัดพลังงานแล้วเปิดใหม่');
+    }
+    if(!await videoReady(video))
+      return fail('โหลดวิดีโอไม่สำเร็จ',
+        'ตรวจว่าโฟลเดอร์ video อัปขึ้นเซิร์ฟเวอร์ครบ แล้วลองเปิด /diag.html เพื่อดูรายละเอียด');
 
     buildScene();
 
@@ -304,16 +345,13 @@ async function launch(spec){
     tag.rotation.x = -0.32;
     group.add(tag);
 
-    $('#tName').textContent = spec.th;
-    intro.style.display='none'; arUI.classList.add('on');
-
-    // WebXR ก่อน ถ้าไม่มีค่อยถอยไปโหมด gyro
     const xrOK = navigator.xr && await navigator.xr.isSessionSupported('immersive-ar').catch(()=>false);
-    if(xrOK) await startXR(); else await startFallback();
+    if(xrOK){ await startXR(); }
+    else { const g = await orientReq; await startFallback(g==='granted'); }
 
   }catch(e){
     console.error(e);
-    fail('เปิดกล้องไม่ได้','ตรวจว่าเปิดผ่าน https และอนุญาตให้เว็บใช้กล้องแล้ว หากยังไม่ได้ ลองเปิดใน Chrome หรือ Safari โดยตรงแทนเบราว์เซอร์ในแอปอื่น');
+    fail('เปิด AR ไม่ได้', e.message + ' — เปิด /diag.html เพื่อดูว่าติดขั้นตอนไหน');
   }
 }
 
@@ -342,25 +380,40 @@ function renderXR(_,frame){
       reticle.visible = true;
       reticle.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(p.transform.matrix));
       ready(true);
-    } else { reticle.visible=false; ready(false); }
+    } else { reticle.visible=false; /* เปิด HUD ตรวจสถานะด้วย ?debug=1 ต่อท้าย URL */
+const DEBUG = new URLSearchParams(location.search).has('debug');
+if(DEBUG) $('#hud').classList.add('on');
+let hudN=0;
+function hud(){
+  if(!DEBUG || (hudN++ % 12)) return;
+  const p=group.position;
+  $('#hud').textContent =
+    `mode ${mode}  gyro ${q.live}\n`+
+    `video rs=${video?.readyState} t=${video?.currentTime.toFixed(1)} `+
+    `${video?.videoWidth}x${video?.videoHeight}\n`+
+    `cam  ${cam.position.x.toFixed(2)} ${cam.position.y.toFixed(2)} ${cam.position.z.toFixed(2)}\n`+
+    `obj  ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)} vis=${group.visible} s=${scale.toFixed(2)}\n`+
+    `reticle vis=${reticle.visible} placed=${placed}`;
+}
+
+ready(false); }
   }
   billboard(renderer.xr.getCamera());
+  hud();
   renderer.render(scene, cam);
 }
 
 /* ---------- โหมด B: กล้อง + ไจโร (iOS และเครื่องที่ไม่มี WebXR) ---------- */
 const q = { alpha:0, beta:0, gamma:0, orient:0, live:false };
 
-async function startFallback(){
+async function startFallback(granted){
   mode='fallback';
   const stream = await navigator.mediaDevices.getUserMedia({
     video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false });
   feed.srcObject = stream; feed.style.display='block';
   await feed.play().catch(()=>{});
 
-  if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission){
-    try{ q.live = (await DeviceOrientationEvent.requestPermission())==='granted'; }catch(_){ q.live=false; }
-  } else q.live = true;
+  q.live = granted !== false;
 
   if(!q.live){
     // ไม่มีไจโร: ก้มกล้องลงคงที่ ยังวางได้แต่จะไม่ยึดติดกับโลกจริงเวลาหันเครื่อง
@@ -392,6 +445,7 @@ const _ray=new THREE.Raycaster(), _ground=new THREE.Plane(new THREE.Vector3(0,1,
       _hit=new THREE.Vector3();
 function renderFallback(){
   orientCamera();
+  cam.updateMatrixWorld(true);        // ไม่งั้น raycast ใช้ค่าเฟรมก่อนหน้า
   if(moving){
     _ray.setFromCamera(new THREE.Vector2(0,0), cam);
     const maxD = surface==='table' ? 2.5 : 8;
@@ -401,6 +455,7 @@ function renderFallback(){
     ready(!!ok);
   }
   billboard(cam);
+  hud();
   renderer.render(scene, cam);
 }
 
