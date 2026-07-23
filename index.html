@@ -391,31 +391,7 @@ function renderXR(_,frame){
       reticle.visible = true;
       reticle.position.setFromMatrixPosition(new THREE.Matrix4().fromArray(p.transform.matrix));
       ready(true);
-    } else { reticle.visible=false; /* เปิด HUD ตรวจสถานะด้วย ?debug=1 ต่อท้าย URL */
-const DEBUG = new URLSearchParams(location.search).has('debug');
-if(DEBUG) $('#hud').classList.add('on');
-let hudN=0;
-function hud(){
-  if(!DEBUG || (hudN++ % 12)) return;
-  const p=group.position;
-  $('#hud').textContent =
-    `mode ${mode}  gyro ${q.live}\n`+
-    `video rs=${video?.readyState} t=${video?.currentTime.toFixed(1)} `+
-    `${video?.videoWidth}x${video?.videoHeight}\n`+
-    `cam  ${cam.position.x.toFixed(2)} ${cam.position.y.toFixed(2)} ${cam.position.z.toFixed(2)}\n`+
-    `obj  ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)} vis=${group.visible} s=${scale.toFixed(2)}\n`+
-    `reticle vis=${reticle.visible} placed=${placed}`;
-}
-
-ready(false);
-
-/* ปิดปุ่มไว้จนกว่าจะรู้ว่าไฟล์วิดีโออยู่ที่ไหน */
-document.querySelectorAll('.card').forEach(c=>c.disabled=true);
-resolveBase().then(b=>{
-  BASE = b;
-  document.querySelectorAll('.card').forEach(c=>c.disabled=false);
-  if(DEBUG) console.log('video base =', JSON.stringify(BASE));
-}); }
+    } else { reticle.visible=false; }
   }
   billboard(renderer.xr.getCamera());
   hud();
@@ -536,7 +512,31 @@ addEventListener('touchmove',e=>{
 },{passive:true});
 addEventListener('touchend',()=>{ pinch0=0; },{passive:true});
 
+/* เปิด HUD ตรวจสถานะด้วย ?debug=1 ต่อท้าย URL */
+const DEBUG = new URLSearchParams(location.search).has('debug');
+if(DEBUG) $('#hud').classList.add('on');
+let hudN=0;
+function hud(){
+  if(!DEBUG || (hudN++ % 12)) return;
+  const p=group.position;
+  $('#hud').textContent =
+    `mode ${mode}  gyro ${q.live}\n`+
+    `video rs=${video?.readyState} t=${video?.currentTime.toFixed(1)} `+
+    `${video?.videoWidth}x${video?.videoHeight}\n`+
+    `cam  ${cam.position.x.toFixed(2)} ${cam.position.y.toFixed(2)} ${cam.position.z.toFixed(2)}\n`+
+    `obj  ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)} vis=${group.visible} s=${scale.toFixed(2)}\n`+
+    `reticle vis=${reticle.visible} placed=${placed}`;
+}
+
 ready(false);
+
+/* ปิดปุ่มไว้จนกว่าจะรู้ว่าไฟล์วิดีโออยู่ที่ไหน */
+document.querySelectorAll('.card').forEach(c=>c.disabled=true);
+resolveBase().then(b=>{
+  BASE = b;
+  document.querySelectorAll('.card').forEach(c=>c.disabled=false);
+  if(DEBUG) console.log('video base =', JSON.stringify(BASE));
+});
 </script>
 </body>
 </html>
