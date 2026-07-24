@@ -111,12 +111,14 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
   <p class="lede">เลือกสิ่งมีชีวิตหนึ่งชนิด แล้ววางลงบนพื้นตรงที่คุณยืนอยู่ เดินรอบดูได้ทุกด้าน</p>
 
   <div class="tray">
-    <div class="tray-label">วางลงบน</div>
-    <div class="seg" id="seg">
-      <button class="seg-b on" data-s="floor">พื้นห้อง</button>
-      <button class="seg-b" data-s="table">บนโต๊ะ</button>
+    <div id="surfacePicker">
+      <div class="tray-label">วางลงบน</div>
+      <div class="seg" id="seg">
+        <button class="seg-b on" data-s="floor">พื้นห้อง</button>
+        <button class="seg-b" data-s="table">บนโต๊ะ</button>
+      </div>
     </div>
-    <div class="tray-label" style="margin-top:14px">เลือกตัวอย่าง / 3 ชนิด</div>
+    <div class="tray-label" id="cardsLabel" style="margin-top:14px">เลือกตัวอย่าง / 3 ชนิด</div>
     <div id="cards"></div>
     <p class="note">ต้องใช้กล้อง กรุณากด “อนุญาต” เมื่อเบราว์เซอร์ถาม · ใช้ได้ดีที่สุดในที่ที่มีแสงพอและมีพื้นโล่งประมาณ 2 เมตร</p>
   </div>
@@ -159,7 +161,7 @@ THREE.ColorManagement.enabled = false;
 const SPECIMENS = [
   { id:'mushroom', th:'เห็ดป่าเต็งรัง', sci:'Fungi spp.',            code:'FNG-01',
     file:'mushroom.mp4',  width:1.15, baseY:0.32 },
-  { id:'tulip',    th:'ดอกกระเจียว',    sci:'Curcuma alismatifolia', code:'CUR-02',
+  { id:'tulip',    th:'ดอกกระเจียวแดง', sci:'Curcuma alismatifolia', code:'CUR-02',
     file:'tulip.mp4',     width:1.50, baseY:0.45 },
   { id:'butterfly',th:'ผีเสื้อ',        sci:'Lepidoptera',           code:'LEP-03',
     file:'butterfly.mp4', width:2.40, baseY:1.30 },
@@ -187,12 +189,26 @@ const SURFACES = {
 };
 let surface = 'floor';
 
+/* ---------- QR แยกจุด ----------
+   จุดจัดแสดงแต่ละจุดมี QR ของตัวเอง ชี้มาที่ index.html?p=1 / ?p=2 / ?p=3
+   (หรือจะใช้ ?s=tulip / ?s=butterfly / ?s=mushroom ตรง ๆ ก็ได้)
+   ทั้งสามจุดวางบนพื้นห้องเสมอ จึงข้ามหน้าเลือกพื้น/โต๊ะและเมนู 3 การ์ดไปเลย */
+const POINTS = { '1':'tulip', '2':'butterfly', '3':'mushroom' };
+const qp = new URLSearchParams(location.search);
+const directId = POINTS[qp.get('p')] || qp.get('s');
+const DIRECT = SPECIMENS.find(s=>s.id===directId) || null;
+if(DIRECT) surface = 'floor';
+
 const $ = s => document.querySelector(s);
 const feed=$('#feed'), intro=$('#intro'), arUI=$('#ar'), hint=$('#hint'), dot=$('#dot');
 const bPlace=$('#bPlace'), bReplay=$('#bReplay'), bMove=$('#bMove');
 
 /* ---------- เมนู ---------- */
-$('#cards').innerHTML = SPECIMENS.map(s=>`
+if(DIRECT){
+  $('#surfacePicker').style.display = 'none';
+  $('#cardsLabel').textContent = 'จุดจัดแสดงนี้';
+}
+$('#cards').innerHTML = (DIRECT ? [DIRECT] : SPECIMENS).map(s=>`
   <button class="card" data-id="${s.id}">
     <img src="${THUMBS[s.id]}" alt="">
     <span><span class="th">${s.th}</span><br>
