@@ -132,7 +132,6 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
   </div>
   <div class="hint" id="hint">เล็งกล้องไปที่พื้น</div>
   <div class="dock">
-    <button class="btn hero" id="bStart" hidden>เปิด AR</button>
     <button class="btn hero" id="bPlace">วางตรงนี้</button>
     <button class="btn" id="bReplay" hidden>เล่นอีกครั้ง</button>
     <button class="btn" id="bMove" hidden>ย้ายที่</button>
@@ -202,7 +201,7 @@ if(DIRECT) surface = 'floor';
 
 const $ = s => document.querySelector(s);
 const feed=$('#feed'), intro=$('#intro'), arUI=$('#ar'), hint=$('#hint'), dot=$('#dot');
-const bStart=$('#bStart'), bPlace=$('#bPlace'), bReplay=$('#bReplay'), bMove=$('#bMove');
+const bPlace=$('#bPlace'), bReplay=$('#bReplay'), bMove=$('#bMove');
 
 /* ---------- เมนู ---------- */
 if(DIRECT){
@@ -225,43 +224,6 @@ document.querySelectorAll('.seg-b').forEach(b=>b.addEventListener('click',()=>{
 }));
 
 function fail(t,p){ $('#mT').textContent=t; $('#mP').textContent=p; $('#msg').classList.add('on'); }
-
-/* QR แบบตรงจุด: เปิดภาพจากกล้องให้เห็นทันทีหลังสแกน
-   การเข้า immersive AR และสิทธิ์ไจโรยังต้องมีการแตะหนึ่งครั้งตามข้อบังคับของเบราว์เซอร์ */
-async function previewDirect(spec){
-  try{
-    if(!navigator.mediaDevices?.getUserMedia)
-      return fail('เบราว์เซอร์นี้ใช้กล้องไม่ได้',
-        'ถ้าเปิดจากลิงก์ในแอป LINE หรือ Facebook ให้กดเมนูแล้วเลือก “เปิดใน Safari” หรือ “เปิดใน Chrome”');
-
-    $('#tName').textContent = spec.th;
-    intro.style.display = 'none';
-    arUI.classList.add('on');
-    bPlace.hidden = true;
-    bStart.hidden = false;
-    hint.textContent = 'กล้องพร้อมแล้ว · แตะ “เปิด AR” เพื่อเริ่ม';
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} },
-      audio:false
-    });
-    feed.srcObject = stream;
-    feed.style.display = 'block';
-    await feed.play().catch(()=>{});
-  }catch(e){
-    fail('เปิดกล้องไม่ได้', 'กรุณาอนุญาตให้เว็บไซต์ใช้กล้อง แล้วลองใหม่อีกครั้ง');
-  }
-}
-
-bStart.addEventListener('click',()=>{
-  bStart.disabled = true;
-  bStart.textContent = 'กำลังเปิด AR…';
-  const stream = feed.srcObject;
-  if(stream) stream.getTracks().forEach(track=>track.stop());
-  feed.srcObject = null;
-  feed.style.display = 'none';
-  launch(DIRECT);
-});
 
 /* ============================================================
    เชเดอร์: วิดีโอ alpha-packed (ครึ่งบน = สี, ครึ่งล่าง = alpha)
@@ -589,7 +551,6 @@ document.querySelectorAll('.card').forEach(c=>c.disabled=true);
 resolveBase().then(b=>{
   BASE = b;
   document.querySelectorAll('.card').forEach(c=>c.disabled=false);
-  if(DIRECT) previewDirect(DIRECT);
   if(DEBUG) console.log('video base =', JSON.stringify(BASE));
 });
 </script>
