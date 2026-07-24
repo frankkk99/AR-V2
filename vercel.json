@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/tulip", "destination": "/index.html" },
+    { "source": "/butterfly", "destination": "/index.html" },
+    { "source": "/mushroom", "destination": "/index.html" }
+  ]
+}

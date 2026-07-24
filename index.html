@@ -190,12 +190,15 @@ const SURFACES = {
 let surface = 'floor';
 
 /* ---------- QR แยกจุด ----------
-   จุดจัดแสดงแต่ละจุดมี QR ของตัวเอง ชี้มาที่ index.html?p=1 / ?p=2 / ?p=3
-   (หรือจะใช้ ?s=tulip / ?s=butterfly / ?s=mushroom ตรง ๆ ก็ได้)
+   จุดจัดแสดงแต่ละจุดมี QR ของตัวเอง ชี้ไปคนละ URL:
+     /tulip  /butterfly  /mushroom     (URL สะอาด — ต้องมี vercel.json rewrite ไปยังไฟล์นี้)
+     ?p=1    ?p=2        ?p=3          (สำรอง เผื่อไม่ได้ deploy บน Vercel)
+     ?s=tulip / ?s=butterfly / ?s=mushroom   (แบบ query ตรง ๆ)
    ทั้งสามจุดวางบนพื้นห้องเสมอ จึงข้ามหน้าเลือกพื้น/โต๊ะและเมนู 3 การ์ดไปเลย */
 const POINTS = { '1':'tulip', '2':'butterfly', '3':'mushroom' };
 const qp = new URLSearchParams(location.search);
-const directId = POINTS[qp.get('p')] || qp.get('s');
+const pathId = location.pathname.split('/').filter(Boolean)[0];
+const directId = POINTS[qp.get('p')] || qp.get('s') || pathId;
 const DIRECT = SPECIMENS.find(s=>s.id===directId) || null;
 if(DIRECT) surface = 'floor';
 
