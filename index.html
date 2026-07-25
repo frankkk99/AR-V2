@@ -266,12 +266,7 @@ const directId = POINTS[pathPoint || qp.get('p')] || qp.get('s');
 const DIRECT = SPECIMENS.find(s=>s.id===directId) || null;
 if(DIRECT) surface = 'floor';
 
-/* หน้า QR โหลดล่วงหน้าเฉพาะวิดีโอของจุดนั้น ไม่แย่งเน็ตโหลดทั้งสามไฟล์ */
-if(DIRECT){
-  const preload = document.createElement('link');
-  preload.rel = 'preload'; preload.as = 'video'; preload.href = BASE + DIRECT.file;
-  document.head.appendChild(preload);
-}
+/* หน้า QR โหลดเฉพาะภาพปุ่มก่อน วิดีโอจะเริ่มดาวน์โหลดหลังแตะเพื่อลดเวลาเปิดหน้า */
 
 const $ = s => document.querySelector(s);
 const feed=$('#feed'), intro=$('#intro'), arUI=$('#ar'), hint=$('#hint'), dot=$('#dot');
@@ -285,7 +280,9 @@ if(DIRECT){
 }
 $('#cards').innerHTML = (DIRECT ? [DIRECT] : SPECIMENS).map(s=>`
   <button class="card" data-id="${s.id}">
-    <img src="${THUMBS[s.id]}" alt="">
+    <img src="${THUMBS[s.id]}" alt="${s.th}"
+      ${DIRECT ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'}
+      width="330" height="390" decoding="async">
     <span><span class="th">${s.th}</span><br>
       <span class="sci">${s.sci}</span></span>
     <span class="code">${s.code}</span>
