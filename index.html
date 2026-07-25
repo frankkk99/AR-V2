@@ -266,7 +266,8 @@ const directId = POINTS[pathPoint || qp.get('p')] || qp.get('s');
 const DIRECT = SPECIMENS.find(s=>s.id===directId) || null;
 if(DIRECT) surface = 'floor';
 
-/* หน้า QR โหลดเฉพาะภาพปุ่มก่อน วิดีโอจะเริ่มดาวน์โหลดหลังแตะเพื่อลดเวลาเปิดหน้า */
+/* หน้า QR แสดงภาพก่อน แล้วอุ่นวิดีโอ/ระบบ AR เบื้องหลังให้พร้อมก่อนผู้ใช้แตะ */
+let warmVideo = null;
 
 const $ = s => document.querySelector(s);
 const feed=$('#feed'), intro=$('#intro'), arUI=$('#ar'), hint=$('#hint'), dot=$('#dot');
@@ -287,6 +288,22 @@ $('#cards').innerHTML = (DIRECT ? [DIRECT] : SPECIMENS).map(s=>`
       <span class="sci">${s.sci}</span></span>
     <span class="code">${s.code}</span>
   </button>`).join('');
+
+if(DIRECT){
+  setTimeout(()=>{
+    if(launching) return;
+    warmVideo = document.createElement('video');
+    warmVideo.src = BASE + DIRECT.file;
+    warmVideo.muted = true; warmVideo.playsInline = true;
+    warmVideo.preload = 'auto';
+    warmVideo.setAttribute('playsinline','');
+    warmVideo.setAttribute('webkit-playsinline','');
+    document.getElementById('stage').appendChild(warmVideo);
+    warmVideo.load();
+    /* พอวิดีโอเริ่มพร้อม จึงค่อยอุ่น Three.js ไม่ให้แย่งเน็ตกับภาพปุ่ม */
+    warmVideo.addEventListener('loadeddata',()=>loadThree().catch(()=>{}),{once:true});
+  },150);
+}
 document.querySelectorAll('.card').forEach(c=>
   c.addEventListener('click',()=>launch(SPECIMENS.find(s=>s.id===c.dataset.id))));
 
@@ -392,11 +409,11 @@ function launch(spec){
     ? DeviceOrientationEvent.requestPermission().catch(()=>'denied')
     : Promise.resolve('granted');
 
-  video = document.createElement('video');
+  video = (DIRECT===spec && warmVideo) ? warmVideo : document.createElement('video');
   video.src = BASE + spec.file; video.loop = true; video.muted = true;
   video.playsInline = true; video.setAttribute('playsinline','');
   video.setAttribute('webkit-playsinline',''); video.preload = 'auto';
-  document.getElementById('stage').appendChild(video);   // ต้องอยู่ใน DOM ไม่งั้น iOS ไม่ decode
+  if(!video.isConnected) document.getElementById('stage').appendChild(video);
 
   const playReq = video.play();
   boot(spec, orientReq, playReq, threeReq);
