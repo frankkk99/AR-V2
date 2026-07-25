@@ -4,85 +4,114 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101C16">
+<meta name="description" content="สัมผัสสิ่งมีชีวิตจากป่าดงพงไพรในโลกเสมือนจริง ณ พิพิธภัณฑ์การเกษตรเฉลิมพระเกียรติฯ ปทุมธานี">
 <title>ป่าดงพงไพร · AR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Trirong:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#101C16; --ink-2:#1B2E24; --moss:#38553F;
-  --lichen:#A9C0A2; --paper:#EBE6D8; --bloom:#E0457B;
-  --edge:rgba(169,192,162,.28);
+  --ink:#0B1611; --ink-2:#17281E; --moss:#385A42;
+  --lichen:#B9CCAE; --paper:#F3ECDD; --gold:#D8B86A; --bloom:#E76786;
+  --edge:rgba(216,184,106,.25); --glass:rgba(18,34,25,.72);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--paper);
   font-family:"IBM Plex Sans Thai",system-ui,sans-serif;overscroll-behavior:none}
+button{touch-action:manipulation}
 #feed{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000}
 canvas.gl{position:fixed;inset:0;display:block}
 
 /* ---------- intro ---------- */
 #intro{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
-  padding:calc(env(safe-area-inset-top) + 30px) 22px calc(env(safe-area-inset-bottom) + 22px);
+  padding:calc(env(safe-area-inset-top) + 22px) 20px calc(env(safe-area-inset-bottom) + 22px);
   background:
-    radial-gradient(120% 70% at 50% 0%,#22392C 0%,var(--ink) 62%),
+    radial-gradient(circle at 92% 9%,rgba(216,184,106,.14) 0 1px,transparent 2px),
+    radial-gradient(circle at 8% 29%,rgba(185,204,174,.11) 0 1px,transparent 2px),
+    radial-gradient(85% 56% at 92% 2%,rgba(65,103,74,.42),transparent 70%),
+    linear-gradient(155deg,#1B3526 0%,#0D1D15 48%,#09120E 100%),
     var(--ink);overflow-y:auto}
-.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--lichen);opacity:.75}
-h1{font-family:Trirong,serif;font-weight:600;font-size:clamp(34px,10vw,48px);
-  line-height:1.12;margin:10px 0 0;letter-spacing:-.01em}
-h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
-.lede{margin-top:14px;font-size:15px;line-height:1.72;color:#CDD8C8;max-width:34ch}
+#intro::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.45;
+  background:
+    repeating-radial-gradient(ellipse at 105% 8%,transparent 0 44px,rgba(216,184,106,.06) 45px 46px),
+    linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:auto,28px 100%}
+#intro>*{position:relative}
+.museum-line{display:flex;align-items:center;gap:11px;color:var(--lichen);
+  font-size:11px;line-height:1.45;letter-spacing:.05em}
+.forest-mark{width:34px;height:34px;border:1px solid var(--edge);border-radius:50%;
+  display:grid;place-items:center;flex:none;color:var(--gold)}
+.forest-mark::before{content:"";width:10px;height:17px;border:1.5px solid currentColor;
+  border-radius:100% 0 100% 0;transform:rotate(-12deg)}
+.eyebrow{margin-top:28px;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+h1{font-family:Trirong,serif;font-weight:600;font-size:clamp(39px,12vw,58px);
+  line-height:1.08;margin:5px 0 0;letter-spacing:-.025em}
+h1 em{display:block;font-style:normal;font-weight:400;font-size:.47em;line-height:1.45;
+  letter-spacing:0;color:var(--lichen)}
+.lede{margin-top:12px;font-size:14.5px;line-height:1.72;color:#D8E0D4;max-width:38ch}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:18px;max-width:500px}
+.step{border-top:1px solid var(--edge);padding-top:8px;color:#C7D3C2;font-size:11.5px}
+.step b{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.12em;
+  color:var(--gold);font-weight:500;margin-bottom:2px}
 
-.tray{margin-top:auto;padding-top:26px;display:flex;flex-direction:column;gap:10px}
+.tray{margin-top:auto;padding-top:24px;display:flex;flex-direction:column;gap:10px}
 .tray-label{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;
-  color:var(--lichen);opacity:.7;padding-bottom:4px;border-bottom:1px solid var(--edge)}
-.card{display:grid;grid-template-columns:74px 1fr auto;align-items:center;gap:16px;
-  padding:12px 14px;border:1px solid var(--edge);border-radius:3px;background:rgba(27,46,36,.5);
-  cursor:pointer;transition:border-color .22s,background .22s,transform .12s;text-align:start;
+  color:var(--lichen);opacity:.82;padding-bottom:5px;border-bottom:1px solid var(--edge)}
+.card{position:relative;display:grid;grid-template-columns:76px 1fr auto;align-items:center;gap:14px;
+  min-height:84px;padding:10px 14px 10px 10px;border:1px solid var(--edge);border-radius:16px;
+  background:linear-gradient(115deg,rgba(43,70,51,.72),rgba(19,36,26,.7));
+  box-shadow:0 12px 30px rgba(0,0,0,.12);cursor:pointer;
+  transition:border-color .22s,background .22s,transform .12s;text-align:start;
   color:inherit;font:inherit;width:100%}
-.card:hover,.card:focus-visible{border-color:var(--lichen);background:rgba(56,85,63,.55)}
+.card:hover,.card:focus-visible{border-color:var(--gold);background:rgba(56,90,66,.74)}
 .card:active{transform:scale(.985)}
 .card:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
-.card img{width:74px;height:60px;object-fit:contain;object-position:center bottom;
+.card img{width:76px;height:62px;object-fit:contain;object-position:center bottom;
   filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
-.card .th{font-family:Trirong,serif;font-size:20px;line-height:1.3}
+.card .th{font-family:Trirong,serif;font-size:19px;line-height:1.25}
 .card .sci{font-style:italic;font-size:12.5px;color:var(--lichen);opacity:.85;margin-top:2px}
-.card .code{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--lichen);opacity:.6}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-.seg-b{background:rgba(27,46,36,.5);border:1px solid var(--edge);color:#9FB399;
-  border-radius:3px;padding:11px 8px;font:inherit;font-size:14.5px;cursor:pointer;
+.card .code{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--gold);opacity:.8}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;padding:4px;
+  border:1px solid var(--edge);border-radius:14px;background:rgba(7,16,11,.32)}
+.seg-b{min-height:44px;background:transparent;border:1px solid transparent;color:#AFC1AA;
+  border-radius:10px;padding:9px 8px;font:inherit;font-size:14px;cursor:pointer;
   transition:border-color .2s,color .2s,background .2s}
-.seg-b.on{border-color:var(--lichen);color:var(--paper);background:rgba(56,85,63,.6)}
+.seg-b.on{border-color:var(--edge);color:var(--paper);background:rgba(64,96,71,.7);
+  box-shadow:0 4px 14px rgba(0,0,0,.18)}
 .seg-b:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
-.note{margin-top:16px;font-size:12.5px;line-height:1.7;color:#8FA48A}
+.note{margin-top:10px;padding-left:12px;border-left:2px solid var(--gold);
+  font-size:12px;line-height:1.65;color:#9EB19A}
 
 /* ---------- AR chrome ---------- */
 #ar{position:fixed;inset:0;z-index:30;display:none;pointer-events:none}
 #ar.on{display:block}
 .topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
-  padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  padding:calc(env(safe-area-inset-top) + 12px) 14px 16px;
   background:linear-gradient(to bottom,rgba(16,28,22,.82),transparent);pointer-events:auto}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--bloom);flex:none}
 .dot.ready{background:var(--lichen)}
 .topbar .name{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
   text-transform:uppercase;opacity:.85}
-.exit{margin-inline-start:auto;background:none;border:1px solid var(--edge);color:var(--paper);
-  border-radius:3px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
+.exit{margin-inline-start:auto;min-height:42px;background:var(--glass);border:1px solid var(--edge);
+  color:var(--paper);border-radius:999px;padding:7px 15px;font:inherit;font-size:13px;
+  cursor:pointer;backdrop-filter:blur(10px)}
 
 .hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 118px);
-  transform:translateX(-50%);background:rgba(16,28,22,.86);border:1px solid var(--edge);
-  border-radius:3px;padding:9px 16px;font-size:13.5px;white-space:nowrap;
-  backdrop-filter:blur(8px);transition:opacity .3s}
+  transform:translateX(-50%);background:var(--glass);border:1px solid var(--edge);
+  border-radius:999px;padding:10px 18px;font-size:13.5px;white-space:nowrap;
+  box-shadow:0 8px 26px rgba(0,0,0,.2);backdrop-filter:blur(12px);transition:opacity .3s}
 
 .dock{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:9px;
   padding:16px 16px calc(env(safe-area-inset-bottom) + 18px);
   background:linear-gradient(to top,rgba(16,28,22,.86),transparent);pointer-events:auto}
-.btn{background:rgba(27,46,36,.78);border:1px solid var(--edge);color:var(--paper);
-  border-radius:3px;padding:11px 17px;font:inherit;font-size:14px;cursor:pointer;
-  backdrop-filter:blur(8px)}
+.btn{min-height:48px;background:var(--glass);border:1px solid var(--edge);color:var(--paper);
+  border-radius:999px;padding:11px 19px;font:inherit;font-size:14px;cursor:pointer;
+  backdrop-filter:blur(12px)}
 .btn:active{background:var(--moss)}
 .btn:focus-visible{outline:2px solid var(--bloom);outline-offset:2px}
-.btn.hero{background:var(--paper);color:var(--ink);border-color:var(--paper);font-weight:600}
+.btn.hero{background:var(--gold);color:#142018;border-color:var(--gold);font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.24)}
 
 #stage{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;
   pointer-events:none;z-index:-1;overflow:hidden}
@@ -96,6 +125,14 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
 #msg .box{max-width:36ch}
 #msg h2{font-family:Trirong,serif;font-size:24px;margin-bottom:12px}
 #msg p{font-size:14.5px;line-height:1.75;color:#CDD8C8;margin-bottom:20px}
+@media (min-width:720px){
+  #intro{padding-left:max(28px,calc((100vw - 620px)/2));padding-right:max(28px,calc((100vw - 620px)/2))}
+  .tray{width:100%}
+}
+@media (max-height:740px){
+  .museum-line{font-size:10px}.eyebrow{margin-top:17px}.steps{margin-top:11px}
+  .tray{padding-top:17px}.note{margin-top:4px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -106,9 +143,18 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
 <div id="hud"></div>
 
 <section id="intro">
-  <div class="eyebrow">พิพิธภัณฑ์ป่าดงพงไพร</div>
-  <h1>ยกป่ามาไว้<br><em>ตรงหน้าคุณ</em></h1>
-  <p class="lede">เลือกสิ่งมีชีวิตหนึ่งชนิด แล้ววางลงบนพื้นตรงที่คุณยืนอยู่ เดินรอบดูได้ทุกด้าน</p>
+  <div class="museum-line">
+    <span class="forest-mark" aria-hidden="true"></span>
+    <span>พิพิธภัณฑ์การเกษตรเฉลิมพระเกียรติฯ<br>ปทุมธานี</span>
+  </div>
+  <div class="eyebrow">AR Nature Experience</div>
+  <h1>ป่าดงพงไพร<em>ธรรมชาติอยู่ใกล้กว่าที่คิด</em></h1>
+  <p class="lede">พบสิ่งมีชีวิตในผืนป่า แล้ววางลงตรงหน้าคุณ เพื่อสำรวจความงามและความเชื่อมโยงของทุกชีวิต</p>
+  <div class="steps" aria-label="วิธีใช้งาน 3 ขั้นตอน">
+    <div class="step"><b>01</b>เลือกสิ่งมีชีวิต</div>
+    <div class="step"><b>02</b>เล็งกล้องที่พื้น</div>
+    <div class="step"><b>03</b>แตะเพื่อวาง</div>
+  </div>
 
   <div class="tray">
     <div id="surfacePicker">
@@ -120,7 +166,7 @@ h1 em{font-style:italic;font-weight:400;color:var(--lichen)}
     </div>
     <div class="tray-label" id="cardsLabel" style="margin-top:14px">เลือกตัวอย่าง / 3 ชนิด</div>
     <div id="cards"></div>
-    <p class="note">ต้องใช้กล้อง กรุณากด “อนุญาต” เมื่อเบราว์เซอร์ถาม · ใช้ได้ดีที่สุดในที่ที่มีแสงพอและมีพื้นโล่งประมาณ 2 เมตร</p>
+    <p class="note">เมื่อระบบถาม กรุณากด “อนุญาตใช้กล้อง” และเล็งไปยังพื้นโล่ง เพื่อให้ AR จับตำแหน่งได้แม่นยำ</p>
   </div>
 </section>
 
