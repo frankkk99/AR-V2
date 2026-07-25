@@ -1,32 +1,38 @@
 {
   "rewrites": [
-    { "source": "/p1", "destination": "/index.html" },
-    { "source": "/p2", "destination": "/index.html" },
-    { "source": "/p3", "destination": "/index.html" }
+    { "source": "/p1", "destination": "/fast.html" },
+    { "source": "/p2", "destination": "/fast.html" },
+    { "source": "/p3", "destination": "/fast.html" }
   ],
   "headers": [
     {
       "source": "/p1",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=86400, stale-while-revalidate=604800" }
       ]
     },
     {
       "source": "/p2",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=86400, stale-while-revalidate=604800" }
       ]
     },
     {
       "source": "/p3",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/fast.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=86400, stale-while-revalidate=604800" }
       ]
     },
     {
       "source": "/(.*).mp4",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=2592000" }
       ]
     },
     {
