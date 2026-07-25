@@ -83,6 +83,29 @@ h1 em{display:block;font-style:normal;font-weight:400;font-size:.47em;line-heigh
 .note{margin-top:10px;padding-left:12px;border-left:2px solid var(--gold);
   font-size:12px;line-height:1.65;color:#9EB19A}
 
+/* หน้า QR แต่ละจุด: เปลี่ยนตัวอย่างให้เป็นปุ่มภาพขนาดใหญ่สำหรับเด็ก */
+#intro.direct-point .lede,#intro.direct-point .steps{display:none}
+#intro.direct-point .eyebrow{margin-top:18px}
+#intro.direct-point h1{font-size:clamp(34px,10vw,50px)}
+#intro.direct-point .tray{flex:1;min-height:0;padding-top:18px}
+#intro.direct-point #cards{display:flex;flex:1;min-height:300px}
+#intro.direct-point .tray-label{text-align:center;border:0;padding:0;
+  color:var(--gold);font-size:13px;letter-spacing:.08em}
+#intro.direct-point .card{display:flex;flex:1;min-height:300px;padding:18px;
+  flex-direction:column;justify-content:center;align-items:center;gap:8px;
+  text-align:center;border:2px solid rgba(216,184,106,.72);border-radius:28px;
+  background:radial-gradient(circle at 50% 42%,rgba(71,112,77,.86),rgba(16,35,24,.9));
+  box-shadow:0 18px 50px rgba(0,0,0,.3),inset 0 0 40px rgba(216,184,106,.06)}
+#intro.direct-point .card img{width:min(70vw,330px);height:min(43vh,390px);
+  flex:1;min-height:170px;object-fit:contain;filter:drop-shadow(0 12px 18px rgba(0,0,0,.55))}
+#intro.direct-point .card .th{font-size:clamp(24px,7vw,34px);font-weight:600}
+#intro.direct-point .card .sci{font-size:14px}
+#intro.direct-point .card .code{position:absolute;right:18px;top:18px}
+#intro.direct-point .card::after{content:"แตะเพื่อเริ่ม AR";display:block;margin-top:8px;
+  min-width:190px;padding:13px 22px;border-radius:999px;background:var(--gold);
+  color:#142018;font-weight:700;font-size:17px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+#intro.direct-point .note{margin-top:4px;text-align:center;border:0;padding:0}
+
 /* ---------- AR chrome ---------- */
 #ar{position:fixed;inset:0;z-index:30;display:none;pointer-events:none}
 #ar.on{display:block}
@@ -256,8 +279,9 @@ const bPlace=$('#bPlace'), bReplay=$('#bReplay'), bMove=$('#bMove');
 
 /* ---------- เมนู ---------- */
 if(DIRECT){
+  intro.classList.add('direct-point');
   $('#surfacePicker').style.display = 'none';
-  $('#cardsLabel').textContent = 'จุดจัดแสดงนี้';
+  $('#cardsLabel').textContent = 'แตะภาพด้านล่างเพื่อเปิดกล้อง';
 }
 $('#cards').innerHTML = (DIRECT ? [DIRECT] : SPECIMENS).map(s=>`
   <button class="card" data-id="${s.id}">
@@ -606,8 +630,7 @@ function hud(){
 
 ready(false);
 
-/* QR ข้ามหน้าเลือกและเริ่มขอสิทธิ์กล้อง/การเคลื่อนไหวทันที */
-if(DIRECT) launch(DIRECT);
+/* หน้า QR รอการแตะภาพหนึ่งครั้ง เพื่อให้ iPhone อนุญาตกล้องและการเคลื่อนไหวได้ */
 </script>
 </body>
 </html>
